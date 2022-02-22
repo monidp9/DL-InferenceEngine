@@ -3,45 +3,46 @@ Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 Prefix: xml: <http://www.w3.org/XML/1998/namespace>
 Prefix: xsd: <http://www.w3.org/2001/XMLSchema#>
+Prefix: t: <http://owl.api.tutorial#>
 
 
 
-Ontology: <http://owl.api.tutorial>
+Ontology: <http://owl.api.tutorial#>
 
 
-ObjectProperty: <http://owl.api.tutorial#attends>
-
-    
-ObjectProperty: <http://owl.api.tutorial#isEnrolledIn>
+ObjectProperty: t:attends
 
     
-Class: <http://owl.api.tutorial#Course>
+ObjectProperty: t:isEnrolledIn
 
     
-Class: <http://owl.api.tutorial#Person>
+Class: t:Course
 
     
-Class: <http://owl.api.tutorial#Student>
+Class: t:Person
+
+    
+Class: t:Student
 
     EquivalentTo: 
-        <http://owl.api.tutorial#Person>
-         and (<http://owl.api.tutorial#attends> some <http://owl.api.tutorial#Course>)
-         and (<http://owl.api.tutorial#isEnrolledIn> some <http://owl.api.tutorial#University>)
+         t:Person
+         and (t:attends some t:Course)
+         and (t:isEnrolledIn some t:University)
     
     
-Class: <http://owl.api.tutorial#University>
+Class: t:University
 
     
-Individual: <http://owl.api.tutorial#Moni>
+Individual: t:Moni
 
     Types: 
-        <http://owl.api.tutorial#Person>,
-        <http://owl.api.tutorial#attends> some <http://owl.api.tutorial#Course>
+        t:Person,
+        t:attends some t:Course
     
     Facts:  
-     <http://owl.api.tutorial#isEnrolledIn>  <http://owl.api.tutorial#manchersterUniversity>
+     t:isEnrolledIn  t:manchersterUniversity
     
     
-Individual: <http://owl.api.tutorial#manchersterUniversity>
+Individual: t:manchersterUniversity
 
     
