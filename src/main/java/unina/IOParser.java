@@ -1,5 +1,6 @@
 package unina;
 
+import java.io.Console;
 import java.io.File;
 import java.util.Collections;
 import java.util.Set;
@@ -17,22 +18,31 @@ public class IOParser {
     /*
         Effettua il parsing di una stringa in Manchester Syntax presa in
         input convertendola in un concetto complesso (OWLClassExpression). 
-        Inoltre carica da file la TBox.
+        Inoltre carica da file la TBox della knowledge base.
     */
+
     OWLOntology o;
     OWLOntologyManager man;
 
-    public IOParser() throws OWLOntologyCreationException {
-        this.man = OWLManager.createOWLOntologyManager();
-        File file = new File("/Users/monidp/Desktop/IWProject/inference-engine-dl/students.owl");
-        o = man.loadOntologyFromOntologyDocument(file);
+    public IOParser() {
+        man = OWLManager.createOWLOntologyManager();                
     }
 
-    public OWLClassExpression fromStringToConcept(String concept) {
+    public String readExpr() {
+        Console console = System.console();
+        String input = "";
+        
+        System.out.println("\n\nEnter your concept in Manchester Syntax:\n");
+        input = console.readLine();
+
+        return input;
+    }
+
+    public OWLClassExpression fromExprToConcept(String expr) {
         ManchesterOWLSyntaxParser parser = OWLManager.createManchesterParser();
 
         // stringa da convertire
-        parser.setStringToParse(concept);
+        parser.setStringToParse(expr);
 
         // ontologia per risolvere entità e classi durante il parsing
         parser.setDefaultOntology(o);
@@ -50,9 +60,24 @@ public class IOParser {
         return parser.parseClassExpression();
     }
 
+    public void loadOntologyTBox(String filePath) throws OWLOntologyCreationException{
+        File file = new File(filePath);
+        o = man.loadOntologyFromOntologyDocument(file);
+    }
+
+   // (not <http://owl.api.tutorial#Student> or <http://owl.api.tutorial#Person>) and <http://owl.api.tutorial#isEnrolledIn> some  <http://owl.api.tutorial#University>
     public static void main(String[] args) throws Exception{    
         IOParser io = new IOParser();
-        OWLClassExpression concept = io.fromStringToConcept("(not <http://owl.api.tutorial#Student> or <http://owl.api.tutorial#Person>) and <http://owl.api.tutorial#isEnrolledIn> some  <http://owl.api.tutorial#University>");
-        System.out.println("\n\n" + concept);
+
+        // caricamento TBox
+        String filePath = "/Users/monidp/Desktop/IWProject/inference-engine-dl/students.owl";
+        io.loadOntologyTBox(filePath);
+
+        // lettura concetto
+        String expr = io.readExpr();
+        OWLClassExpression concept = io.fromExprToConcept(expr);
+        
+        System.out.println("\n ----------");
+        System.out.println("\n" + concept);
     }
 }
