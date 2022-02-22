@@ -1,3 +1,8 @@
 {
+<<<<<<< HEAD
     "java.configuration.updateBuildConfiguration": "automatic"
+=======
+    "java.configuration.updateBuildConfiguration": "automatic" ,
+    "java.jdt.ls.java.home": "/Library/Java/JavaVirtualMachines/jdk-15.0.2.jdk/Contents/Home"
+>>>>>>> aad90a8 (creazione di reasoner.java, node.java)
 }
