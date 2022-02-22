@@ -1,6 +1,7 @@
 package unina;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.Set;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
@@ -13,7 +14,12 @@ import org.semanticweb.owlapi.util.ShortFormProvider;
 import org.semanticweb.owlapi.util.mansyntax.ManchesterOWLSyntaxParser;
 
 public class IOParser {
-    OWLOntology o = null;
+    /*
+        Effettua il parsing di una stringa in Manchester Syntax presa in
+        input convertendola in un concetto complesso (OWLClassExpression). 
+        Inoltre carica da file la TBox.
+    */
+    OWLOntology o;
     OWLOntologyManager man;
 
     public IOParser() throws OWLOntologyCreationException {
@@ -22,13 +28,18 @@ public class IOParser {
         o = man.loadOntologyFromOntologyDocument(file);
     }
 
-    public OWLClassExpression parseInputConcept(String concept) throws OWLOntologyCreationException{
+    public OWLClassExpression fromStringToConcept(String concept) {
         ManchesterOWLSyntaxParser parser = OWLManager.createManchesterParser();
+
+        // stringa da convertire
         parser.setStringToParse(concept);
-        parser.setDefaultOntology(this.o);
 
-        Set<OWLOntology> ontologies = man.getOntologies();
+        // ontologia per risolvere entità e classi durante il parsing
+        parser.setDefaultOntology(o);
 
+        Set<OWLOntology> ontologies = Collections.singleton(o);
+
+        // checker necessario per mappare le stringhe entità con le entità effettive
         ShortFormProvider sfp = new ManchesterOWLSyntaxPrefixNameShortFormProvider(man.getOntologyFormat(o));
         BidirectionalShortFormProvider shortFormProvider = new BidirectionalShortFormProviderAdapter(
             ontologies, sfp
@@ -41,8 +52,7 @@ public class IOParser {
 
     public static void main(String[] args) throws Exception{    
         IOParser io = new IOParser();
-        //io.parseInputConcept(args[0]);
-        OWLClassExpression concept = io.parseInputConcept("(not <http://owl.api.tutorial#Student> or <http://owl.api.tutorial#Person>) and <http://owl.api.tutorial#isEnrolledIn> some  <http://owl.api.tutorial#University>");
+        OWLClassExpression concept = io.fromStringToConcept("(not <http://owl.api.tutorial#Student> or <http://owl.api.tutorial#Person>) and <http://owl.api.tutorial#isEnrolledIn> some  <http://owl.api.tutorial#University>");
         System.out.println("\n\n" + concept);
     }
 }
