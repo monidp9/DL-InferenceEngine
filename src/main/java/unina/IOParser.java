@@ -65,7 +65,6 @@ public class IOParser {
         o = man.loadOntologyFromOntologyDocument(file);
     }
 
-   // (not <http://owl.api.tutorial#Student> or <http://owl.api.tutorial#Person>) and <http://owl.api.tutorial#isEnrolledIn> some  <http://owl.api.tutorial#University>
     public static void main(String[] args) throws Exception{    
         IOParser io = new IOParser();
 
