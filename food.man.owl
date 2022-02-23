@@ -54,9 +54,3 @@ Class: t:VegetarianFood
         not (t:Food)
     
     
-Class: owl:Nothing
-
-    SubClassOf: 
-        t:eats only t:Food
-    
-    
