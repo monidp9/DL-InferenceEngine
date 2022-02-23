@@ -32,6 +32,13 @@
       <artifactId>owlapi-distribution</artifactId>
       <version>5.1.0</version>
     </dependency>
+
+    <!-- dependecy for JavaFX -->
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-controls</artifactId>
+      <version>17.0.1</version>
+    </dependency>
   </dependencies>
 
   <build>

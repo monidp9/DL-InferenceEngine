@@ -3,12 +3,10 @@ package unina;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.swing.*;
-import javax.swing.plaf.DimensionUIResource;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.plaf.metal.OceanTheme;
 
@@ -27,10 +25,6 @@ import org.semanticweb.owlapi.util.ShortFormProvider;
 import org.semanticweb.owlapi.util.mansyntax.ManchesterOWLSyntaxParser;
 
 import javafx.application.Platform;
-import javafx.geometry.Dimension2D;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
 
 
 public class IOParser extends JDialog implements ActionListener{
@@ -70,7 +64,7 @@ public class IOParser extends JDialog implements ActionListener{
 
         OWLDataFactory df = man.getOWLDataFactory();
 
-        List<OWLLogicalAxiom> axioms = o.logicalAxioms().collect(Collectors.toList());
+        List<OWLAxiom> axioms = o.logicalAxioms().collect(Collectors.toList());
 
         for(OWLAxiom ax: axioms) {
             // gestione delle GCI
@@ -366,11 +360,15 @@ public class IOParser extends JDialog implements ActionListener{
         String filePath = "/Users/monidp/Desktop/IWProject/inference-engine-dl/food.man.owl";
         io.loadOntology(filePath);
 
-        // lettura espressione e traduzione in concetto
+        // lettura e traduzione in concetto
         OWLClassExpression concept = io.readAndTraslateExpr();
         
         System.out.println("\n ------ TRASLATED ------");
         System.out.println("\n" + concept + "\n");
+
+        Reasoner reasoner = new Reasoner();
+        
+        // chiamata funzione
 
         System.exit(0);
     }
