@@ -17,13 +17,14 @@ import org.semanticweb.owlapi.model.OWLObjectIntersectionOf;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLObjectPropertyDomainAxiom;
 import org.semanticweb.owlapi.model.OWLObjectPropertyRangeAxiom;
+import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
+import org.semanticweb.owlapi.model.OWLObjectUnionOf;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 
 public class App 
 {
     public static void main( String[] args ) throws Exception {
-        
         App app = new App();  
         app.createAnOntology();
     }
@@ -67,15 +68,11 @@ public class App
         OWLSubClassOfAxiom subClassAx = df.getOWLSubClassOfAxiom(Person, notFood);
         o.add(subClassAx);
 
-        subClassAx = df.getOWLSubClassOfAxiom(df.getOWLNothing(), eatsFood);
-        o.add(subClassAx);
-
         subClassAx = df.getOWLSubClassOfAxiom(VegetarianFood, notFood);
         o.add(subClassAx);
 
         subClassAx = df.getOWLSubClassOfAxiom(Vegetable, VegetarianFood);
         o.add(subClassAx);
-
 
         OWLClassExpression notVegFood = VegetarianFood.getObjectComplementOf();
 
@@ -91,7 +88,6 @@ public class App
 
         // File fileout = new File("/Users/monidp/Desktop/IWProject/inference-engine-dl/food.man.owl");
         // man.saveOntology(o, new ManchesterSyntaxDocumentFormat(), new FileOutputStream(fileout));
-
     }
 }
 
