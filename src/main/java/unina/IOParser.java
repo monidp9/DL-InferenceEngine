@@ -1,94 +1,58 @@
 package unina;
 
-import java.io.Console;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.swing.*;
+import javax.swing.plaf.DimensionUIResource;
+import javax.swing.plaf.metal.MetalLookAndFeel;
+import javax.swing.plaf.metal.OceanTheme;
+
+import java.awt.event.*;
+
 import java.util.*;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.expression.ShortFormEntityChecker;
 import org.semanticweb.owlapi.manchestersyntax.renderer.ManchesterOWLSyntaxPrefixNameShortFormProvider;
+import org.semanticweb.owlapi.manchestersyntax.renderer.ParserException;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.util.BidirectionalShortFormProvider;
 import org.semanticweb.owlapi.util.BidirectionalShortFormProviderAdapter;
 import org.semanticweb.owlapi.util.ShortFormProvider;
 import org.semanticweb.owlapi.util.mansyntax.ManchesterOWLSyntaxParser;
 
+import javafx.application.Platform;
+import javafx.geometry.Dimension2D;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 
-public class IOParser {
+
+public class IOParser extends JDialog implements ActionListener{
 
     /*
      * Effettua il parsing di una stringa in Manchester Syntax presa in input,
-     * convertendola in un concetto complesso (OWLClassExpression). Inoltre carica
-     * da file la knowledge base di interesse (TBox).
+     * convertendola in un concetto complesso (OWLClassExpression). Permette
+     * di caricare da file la knowledge base di interesse (TBox) e di convertire
+     * una TBox in un concetto complesso.
      */
 
-    OWLOntology o;
-    OWLOntologyManager man;
+    private OWLOntology o;
+    private OWLOntologyManager man;
+
+    private String expr;
+    private OWLClassExpression concept;
+
+    private JTextArea t;
+    private JDialog d;
 
     public IOParser() {
-        man = OWLManager.createOWLOntologyManager();                
-    }
-
-    public String readExpr() {
-
-        /*
-         * Legge da riga di comando un'espressione scritta secondo 
-         * Manchester Syntax.
-         */
-
-        Console console = System.console();
-        String input = "";
-        
-        System.out.println("\n\nEnter your concept in Manchester Syntax:\n");
-        input = console.readLine();
-
-        return input;
-    }
-
-    public void loadOntologyTBox(String filePath) throws OWLOntologyCreationException{
-
-        /*
-         * Carica da file l'ontologia specificata tramite path.
-         */
-
-        File file = new File(filePath);
-        o = man.loadOntologyFromOntologyDocument(file);
-    }
-
-    public OWLClassExpression fromExprToConcept(String expr) {
-
-        /*
-         * Converte l'espressione in Manchester Syntax presa da input in un
-         * concetto composto secondo il tipo di dato OWLClassExpression.
-         */
-
-        ManchesterOWLSyntaxParser parser = OWLManager.createManchesterParser();
-
-        // stringa da convertire
-        parser.setStringToParse(expr);
-
-        // ontologia per risolvere entità e classi durante il parsing
-        parser.setDefaultOntology(o);
-
-        Set<OWLOntology> ontologies = Collections.singleton(o);
-
-        // checker necessario per mappare le stringhe entità con le entità effettive
-        ShortFormProvider sfp = new ManchesterOWLSyntaxPrefixNameShortFormProvider(man.getOntologyFormat(o));
-        BidirectionalShortFormProvider shortFormProvider = new BidirectionalShortFormProviderAdapter(
-            ontologies, sfp
-        );
-        ShortFormEntityChecker checker = new ShortFormEntityChecker(shortFormProvider);
-
-        parser.setOWLEntityChecker(checker);
-
-        OWLClassExpression concept = parser.parseClassExpression();
-        concept = concept.getNNF();
-        concept = visitConcept(concept);
-
-        return concept;
+        man = OWLManager.createOWLOntologyManager();  
     }
 
     public OWLClassExpression fromTBoxToConcept() {
@@ -185,12 +149,160 @@ public class IOParser {
         return concept;
     }
 
-    private OWLClassExpression visitConcept(OWLClassExpression concept) {
+    public OWLClassExpression readAndTraslateExpr() {
 
         /*
-         * Verifica se gli operatori sono stati applicati su solo due operandi.
-         * In tal caso restituisce il concetto passato, altrimenti termina il
-         * programma con messaggio di errore.
+         * Gestisce la GUI per l'inserimento dell'espressione in Manchester
+         * Syntax e attende che l'utente completi l'operazione prima di 
+         * restituire il concetto.
+         */
+
+        t = new JTextArea();
+        d = new JDialog();
+
+        d.setTitle("Enter your concept (Manchester Syntax)");
+
+        try {
+            UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+            MetalLookAndFeel.setCurrentTheme(new OceanTheme());
+        }
+        catch (Exception e) { e.printStackTrace(); }
+
+        JMenuBar mb = new JMenuBar();
+
+        JMenu m1 = new JMenu("File");
+
+        JMenuItem mi1 = new JMenuItem("Save");
+        JMenuItem mi2 = new JMenuItem("Done");
+        JMenuItem mi3 = new JMenuItem("Close");
+
+        mi1.addActionListener(this);
+        mi2.addActionListener(this);
+        mi3.addActionListener(this);
+
+        m1.add(mi1);
+        
+        mb.add(m1);
+        mb.add(mi2);
+        mb.add(mi3);
+
+        d.add(t);
+        d.setJMenuBar(mb);
+
+        d.setSize(600, 300);
+        d.setLocationRelativeTo(null);
+        d.setModal(true);
+        d.setVisible(true);
+
+        return concept;
+    }
+    
+    public void actionPerformed(ActionEvent e) {
+        
+        /*
+         * Implementa le azioni da fare una volta che l'utente interagisce
+         * con la GUI.
+         */
+
+        String s = e.getActionCommand();
+
+        if(s.equals("Save")) {
+            JFileChooser j = new JFileChooser("f:");
+ 
+            // invoca uno dialog per il salvataggio
+            int r = j.showSaveDialog(null);
+ 
+            if (r == JFileChooser.APPROVE_OPTION) {
+                File fi = new File(j.getSelectedFile().getAbsolutePath());
+                try {
+                    FileWriter wr = new FileWriter(fi, false);
+                    BufferedWriter w = new BufferedWriter(wr);
+ 
+                    w.write(t.getText()); 
+                    w.flush();
+                    w.close();
+                }
+                catch (Exception evt) {
+                    JOptionPane.showMessageDialog(d, evt.getMessage());
+                }
+            }
+            // se l'utente cancella l'operazione
+            else {
+                JOptionPane.showMessageDialog(d, "the user cancelled the operation");
+            }
+        } else if(s.equals("Done")) {
+            expr = t.getText();
+
+            try {
+                fromExprToConcept();
+            } catch (ParserException ex) {
+                JOptionPane.showMessageDialog(d, "Manchester syntax error.", "ERROR", JOptionPane.ERROR_MESSAGE);
+                System.exit(1);
+            } finally {
+                JOptionPane.showMessageDialog(d, "Concept traslated.", "SUCCESS", JOptionPane.INFORMATION_MESSAGE);
+            }
+            
+            d.setModal(false);
+            d.setVisible(false);
+            Platform.exit();
+        } else if(s.equals("Close")) {
+            d.setModal(false);
+            d.setVisible(false);
+            System.exit(0);
+        }
+    }
+
+    public void loadOntology(String filePath) {
+
+        /*
+         * Carica da file l'ontologia specificata tramite path.
+         */
+
+        File file = new File(filePath);
+        try {
+            o = man.loadOntologyFromOntologyDocument(file);
+        } catch (OWLOntologyCreationException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void fromExprToConcept() {
+
+        /*
+         * Converte l'espressione attributo della classe in un concetto
+         * composto secondo il tipo di dato OWLClassExpression.
+         */
+
+        ManchesterOWLSyntaxParser parser = OWLManager.createManchesterParser();
+
+        // stringa da convertire
+        parser.setStringToParse(expr);
+
+        // ontologia per risolvere entità e classi durante il parsing
+        parser.setDefaultOntology(o);
+
+        Set<OWLOntology> ontologies = Collections.singleton(o);
+
+        // checker necessario per mappare le stringhe entità con le entità effettive
+        ShortFormProvider sfp = new ManchesterOWLSyntaxPrefixNameShortFormProvider(man.getOntologyFormat(o));
+        BidirectionalShortFormProvider shortFormProvider = new BidirectionalShortFormProviderAdapter(
+            ontologies, sfp
+        );
+        ShortFormEntityChecker checker = new ShortFormEntityChecker(shortFormProvider);
+
+        parser.setOWLEntityChecker(checker);
+
+        concept = parser.parseClassExpression();
+        concept = concept.getNNF();
+        concept = checkBinary(concept);
+    }
+
+    private OWLClassExpression checkBinary(OWLClassExpression concept) {
+
+        /*
+         * Visita un concetto scomponendolo ricorsivamente. Verifica se gli operatori 
+         * sono stati applicati solo su due operandi. In tal caso restituisce il 
+         * concetto passato, altrimenti termina il programma con messaggio di errore.
          */
 
         concept.accept(new OWLClassExpressionVisitor() {
@@ -198,7 +310,8 @@ public class IOParser {
            public void visit(OWLObjectIntersectionOf objIn) {
                List<OWLClassExpression> l = objIn.getOperandsAsList();
                if(l.size() > 2) {
-                   System.out.println("<!> Parsing Error: logical operators (and, or) are expected to be binary");
+                   JOptionPane.showMessageDialog(d, "Logical operators (and, or) are expected to be binary",
+                                                 "ERROR", JOptionPane.ERROR_MESSAGE);
                    System.exit(1);
                 }
                for(OWLClassExpression ce: l) {
@@ -206,7 +319,7 @@ public class IOParser {
                       ce instanceof OWLObjectUnionOf ||
                       ce instanceof OWLObjectSomeValuesFrom ||
                       ce instanceof OWLObjectAllValuesFrom) {
-                        visitConcept(ce);
+                        checkBinary(ce);
                     }
                 }
             }
@@ -215,7 +328,8 @@ public class IOParser {
            public void visit(OWLObjectUnionOf objUn) {
               List<OWLClassExpression> l = objUn.getOperandsAsList();
                if(l.size() > 2) {
-                  System.out.println("<!> Parsing Error: logical operators (and, or) are expected to be binary");
+                  JOptionPane.showMessageDialog(d, "Logical operators (and, or) are expected to be binary",
+                                                "ERROR", JOptionPane.ERROR_MESSAGE);
                   System.exit(1);
                 }
               for(OWLClassExpression ce: l) {
@@ -223,7 +337,7 @@ public class IOParser {
                      ce instanceof OWLObjectUnionOf || 
                      ce instanceof OWLObjectSomeValuesFrom ||
                      ce instanceof OWLObjectAllValuesFrom) {
-                        visitConcept(ce);
+                        checkBinary(ce);
                     }
                 }
             }
@@ -231,40 +345,33 @@ public class IOParser {
            @Override
            public void visit(OWLObjectSomeValuesFrom objSVF) {
                 OWLClassExpression filler = objSVF.getFiller();
-                visitConcept(filler);
+                checkBinary(filler);
            }
 
            @Override 
            public void visit(OWLObjectAllValuesFrom objAVF) {
                 OWLClassExpression filler = objAVF.getFiller();
-                visitConcept(filler);
+                checkBinary(filler);
            }
         });
 
         return concept;
     }
 
-    public static void main(String[] args) throws Exception{    
+
+    public static void main(String[] args) {    
         IOParser io = new IOParser();
 
         // caricamento TBox
         String filePath = "/Users/monidp/Desktop/IWProject/inference-engine-dl/food.man.owl";
-        io.loadOntologyTBox(filePath);
+        io.loadOntology(filePath);
 
-        // lettura concetto
-        // String expr = io.readExpr();
-        // OWLClassExpression concept1 = io.fromExprToConcept(expr);
-        // expr = io.readExpr();
-        // OWLClassExpression concept2 = io.fromExprToConcept(expr);
+        // lettura espressione e traduzione in concetto
+        OWLClassExpression concept = io.readAndTraslateExpr();
         
-        // System.out.println("\n ------ TRASLATED ------");
-        // System.out.println("\n" + concept1);
-        // System.out.println("\n" + concept2);
-        // System.out.println("\n" + concept1.asConjunctSet());
-        // System.out.println("\n" + concept2.asConjunctSet());
-        // System.out.println("\n Secondo equals: " + concept1.equals(concept2));
+        System.out.println("\n ------ TRASLATED ------");
+        System.out.println("\n" + concept + "\n");
 
-        OWLClassExpression concept = io.fromTBoxToConcept();
+        System.exit(0);
     }
 }
-
