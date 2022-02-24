@@ -51,7 +51,6 @@ public class Reasoner {
 
         }while (isAppliedRule);  
 
-
         // applica OR esaustivamente aggiungendo uno soltanto dei disgiunti
         for (OWLClassExpression axiom : structure){
 
@@ -95,44 +94,47 @@ public class Reasoner {
             }
         }
       
-        // va a svolgere esistenziale e universale (non so se serve il controllo, dovrebbe non volerci, esce da union)
-        if (!isAppliedRule){ 
+        if(isClashFree(structure)){
+            // va a svolgere esistenziale e universale (non so se serve il controllo, dovrebbe non volerci, esce da union)
+            if (!isAppliedRule){ 
 
-            // applica ESISTENZIALE
-            do{    
-                for (OWLClassExpression abox : structure){
-                    if (abox instanceof OWLObjectSomeValuesFrom){
-                        isAppliedRule = handleSomeValuesFrom(abox, structureTmp, propertyContainer);
-                    }
-
-                    if (isAppliedRule){ 
-                        // applica UNIVERSALE esaustivamente
-                        for (OWLClassExpression abox2 : structure) {
-                            if (abox2 instanceof OWLObjectAllValuesFrom){
-                                isAppliedRule2 = handleAllValuesFrom(abox2, structureTmp, propertyContainer);
-                            }
+                // applica ESISTENZIALE
+                do{    
+                    for (OWLClassExpression abox : structure){
+                        if (abox instanceof OWLObjectSomeValuesFrom){
+                            isAppliedRule = handleSomeValuesFrom(abox, structureTmp, propertyContainer);
                         }
-                        if (isAppliedRule2 == true) 
-                            propertyContainer.remove(0);
-                
-                        if (isClashFree(structureTmp)){ 
-                            newNode = new Node(); 
-                            newNode.setStructure(structureTmp);
-                            node.setSxPtr(newNode);
 
-                            if(!dfs(newNode)){
+                        if (isAppliedRule){ 
+                            // applica UNIVERSALE esaustivamente
+                            for (OWLClassExpression abox2 : structure) {
+                                if (abox2 instanceof OWLObjectAllValuesFrom){
+                                    isAppliedRule2 = handleAllValuesFrom(abox2, structureTmp, propertyContainer);
+                                }
+                            }
+                            if (isAppliedRule2 == true) 
+                                propertyContainer.remove(0);
+                    
+                            if (isClashFree(structureTmp)){ 
+                                newNode = new Node(); 
+                                newNode.setStructure(structureTmp);
+                                node.setSxPtr(newNode);
+
+                                if(!dfs(newNode)){
+                                    return false;
+                                }
+                            } else {
                                 return false;
                             }
-                        } else {
-                            return false;
                         }
                     }
-                }
-                node.setStructure(new LinkedList<>(structureTmp)); 
-                structure = node.getStructure();
+                    node.setStructure(new LinkedList<>(structureTmp)); 
+                    structure = node.getStructure();
 
-            } while (isAppliedRule);  
-
+                } while (isAppliedRule);  
+            }
+        } else {
+            return false;
         }
         return true;
     } 
@@ -182,7 +184,7 @@ public class Reasoner {
         axiom.accept(new OWLClassExpressionVisitor() {
             @Override
             public void visit(OWLObjectIntersectionOf oi) {
-                for (OWLClassExpression newAxiom : oi.getOperands()) {
+                for (OWLClassExpression newAxiom : oi.getOperandsAsList()) {
                     if (!structure.contains(newAxiom)){ 
                         structure.add(newAxiom);
                     }
@@ -202,7 +204,7 @@ public class Reasoner {
                 boolean flag = false;
                 OWLClassExpression secondDisjunct = null; 
 
-                for (OWLClassExpression disjunct : ou.getOperands()) {
+                for (OWLClassExpression disjunct : ou.getOperandsAsList()) {
                     if(!flag){
                         flag = true;
                     } else {
@@ -213,7 +215,7 @@ public class Reasoner {
                 // quando termina la chiamata ricorsiva a sx e si risale, bisogna aggiungere il secondo disgiunto e scendere a destra
                 flag = false;
 
-                for (OWLClassExpression disjunct : ou.getOperands()) {
+                for (OWLClassExpression disjunct : ou.getOperandsAsList()) {
                     if (!structure.contains(disjunct)){ 
 
                         if ((isPtrSxEmpty || flag) && !structure.contains(secondDisjunct)){
