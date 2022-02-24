@@ -16,8 +16,17 @@ ObjectProperty: t:eats
        t:Person
     
     Range: 
-        t:eats only t:Food
+        t:Food
     
+
+ObjectProperty: t:loves
+
+    Domain:
+        t:Person
+
+    Range:
+        t:Food
+
     
 Class: t:Food
 
