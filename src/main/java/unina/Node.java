@@ -1,24 +1,29 @@
 package unina;
 
-import java.util.LinkedList;
-import java.util.List;
-import org.semanticweb.owlapi.model.OWLClassExpression;
+import java.util.Set;
+import java.util.TreeSet;
+
+import org.semanticweb.owlapi.model.OWLAxiom;
+import org.semanticweb.owlapi.model.OWLIndividual;
+
 
 public class Node {
 
-    private List<OWLClassExpression> structure;
+    private Set<OWLAxiom> structure;
     private Node sxPtr = null;
     private Node dxPtr = null;
+    private OWLIndividual x;
 
-    public Node(){
-        this.structure = new LinkedList<> ();
+    public Node(OWLIndividual x){
+        this.structure = new TreeSet <OWLAxiom>();
+        this.x = x;
     }
     
-    public List<OWLClassExpression> getStructure(){
+    public Set<OWLAxiom> getStructure(){
         return structure;
     }
 
-    public void setStructure(List<OWLClassExpression> structure){
+    public void setStructure(Set<OWLAxiom> structure){
         this.structure = structure;
     }
 
@@ -36,5 +41,9 @@ public class Node {
 
     public Node getDxPtr(){
         return dxPtr;
+    }
+
+    public OWLIndividual getIndividual(){
+        return x;
     }
 }
