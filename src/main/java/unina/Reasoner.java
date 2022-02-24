@@ -182,7 +182,7 @@ public class Reasoner {
         axiom.accept(new OWLClassExpressionVisitor() {
             @Override
             public void visit(OWLObjectIntersectionOf oi) {
-                for (OWLClassExpression newAxiom : oi.getOperands()) {
+                for (OWLClassExpression newAxiom : oi.getOperandsAsList()) {
                     if (!structure.contains(newAxiom)){ 
                         structure.add(newAxiom);
                     }
@@ -202,7 +202,7 @@ public class Reasoner {
                 boolean flag = false;
                 OWLClassExpression secondDisjunct = null; 
 
-                for (OWLClassExpression disjunct : ou.getOperands()) {
+                for (OWLClassExpression disjunct : ou.getOperandsAsList()) {
                     if(!flag){
                         flag = true;
                     } else {
@@ -213,7 +213,7 @@ public class Reasoner {
                 // quando termina la chiamata ricorsiva a sx e si risale, bisogna aggiungere il secondo disgiunto e scendere a destra
                 flag = false;
 
-                for (OWLClassExpression disjunct : ou.getOperands()) {
+                for (OWLClassExpression disjunct : ou.getOperandsAsList()) {
                     if (!structure.contains(disjunct)){ 
 
                         if ((isPtrSxEmpty || flag) && !structure.contains(secondDisjunct)){

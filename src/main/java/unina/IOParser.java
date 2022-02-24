@@ -359,7 +359,7 @@ public class IOParser extends JDialog implements ActionListener{
         // caricamento TBox
         String sasiPath = "/Users/salvatoreamodio/Desktop/Intelligent Web/progetto/DL-InferenceEngine/food.man.owl";
         String filePath = "/Users/monidp/Desktop/IWProject/inference-engine-dl/food.man.owl";
-        io.loadOntology(sasiPath);
+        io.loadOntology(filePath);
 
         // lettura e traduzione in concetto
         OWLClassExpression concept = io.readAndTraslateExpr();
@@ -369,7 +369,6 @@ public class IOParser extends JDialog implements ActionListener{
 
         Reasoner reasoner = new Reasoner();
         System.out.println("TABLEAUX : "+reasoner.reasoning(concept));
-        // chiamata funzione
 
         System.exit(0);
     }
