@@ -352,7 +352,6 @@ public class IOParser extends JDialog implements ActionListener{
         return concept;
     }
 
-
     public static void main(String[] args) {    
         IOParser io = new IOParser();
 
