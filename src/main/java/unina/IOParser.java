@@ -1,7 +1,9 @@
 package unina;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -169,12 +171,15 @@ public class IOParser extends JDialog implements ActionListener{
         JMenuItem mi1 = new JMenuItem("Save");
         JMenuItem mi2 = new JMenuItem("Done");
         JMenuItem mi3 = new JMenuItem("Close");
+        JMenuItem mi4 = new JMenuItem("Open");
 
         mi1.addActionListener(this);
         mi2.addActionListener(this);
         mi3.addActionListener(this);
+        mi4.addActionListener(this);
 
         m1.add(mi1);
+        m1.add(mi4);
         
         mb.add(m1);
         mb.add(mi2);
@@ -243,6 +248,33 @@ public class IOParser extends JDialog implements ActionListener{
             d.setModal(false);
             d.setVisible(false);
             System.exit(0);
+        } else if(s.equals("Open")) {
+            JFileChooser j = new JFileChooser("f:");
+            int r = j.showOpenDialog(null);
+ 
+            if (r == JFileChooser.APPROVE_OPTION) {
+                File fi = new File(j.getSelectedFile().getAbsolutePath());
+ 
+                try {
+                    String s1 = "", sl = "";
+
+                    FileReader fr = new FileReader(fi);
+                    BufferedReader br = new BufferedReader(fr);
+ 
+                    sl = br.readLine();
+ 
+                    while ((s1 = br.readLine()) != null) {
+                        sl = sl + "\n" + s1;
+                    }
+ 
+                    t.setText(sl);
+                }
+                catch (Exception evt) {
+                    JOptionPane.showMessageDialog(d, evt.getMessage());
+                }
+            }
+            else
+                JOptionPane.showMessageDialog(d, "the user cancelled the operation");
         }
     }
 
