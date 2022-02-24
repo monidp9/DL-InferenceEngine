@@ -1,27 +1,24 @@
 package unina;
 
-import java.util.Set;
-
+import java.util.LinkedList;
+import java.util.List;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 
 public class Node {
 
-    private Set<OWLClassExpression> structure;
+    private List<OWLClassExpression> structure;
+    private Node sxPtr = null;
+    private Node dxPtr = null;
 
-    private Node sxPtr;
-    private Node dxPtr;
-
-    public Node(){}
-    
-    public Node(Set<OWLClassExpression> structure){
-        this.structure = structure;
+    public Node(){
+        this.structure = new LinkedList<> ();
     }
-
-    public Set<OWLClassExpression> getStructure(){
+    
+    public List<OWLClassExpression> getStructure(){
         return structure;
     }
 
-    public void setStructure(Set<OWLClassExpression> structure){
+    public void setStructure(List<OWLClassExpression> structure){
         this.structure = structure;
     }
 
