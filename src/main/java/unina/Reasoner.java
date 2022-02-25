@@ -74,7 +74,6 @@ public class Reasoner {
                 if (classExpression instanceof OWLObjectUnionOf) {
                     newNode = new Node(node.getIndividual());
                     newNode.setStructure(new TreeSet<OWLAxiom>(structure));
-                    node.setSxPtr(newNode);
                     isAppliedRule = handleUnionOf(classExpression, node, newNode);
                 }
             }
@@ -84,18 +83,19 @@ public class Reasoner {
                 terminato il ciclo si valutano le applicazioni delle regole esistenziali ed universali
             */
             if (isAppliedRule){
+                node.setSxPtr(newNode);
                 //se la nuovstruttura non è clash-free o la chiamata a sx ritorna false si analizza il ramo dx
                 if (!isClashFree(newNode.getStructure()) || !dfs(newNode)){ 
                     // viene ripresa la struttura non contenente il primo disgiunto
                     // structureTmp = new TreeSet<OWLAxiom>(structure); non serve più structureTmp è la struttura iniziale
                     newNode = new Node(node.getIndividual()); 
-                    node.setDxPtr(newNode);
                     newNode.setStructure(new TreeSet<OWLAxiom>(structure));
 
                     //la regola è sempre applicata in quanto si aggiunge alla struttura l'altro disgiunto
                     isAppliedRule = handleUnionOf(classExpression, node, newNode); 
 
                     if (isClashFree(newNode.getStructure())){ 
+                        node.setDxPtr(newNode);
                         return dfs(newNode);
                     } else {
                         return false;
@@ -243,6 +243,7 @@ public class Reasoner {
                 flag = false;
 
                 for (OWLClassExpression disjunct : ou.getOperandsAsList()) {
+
                     Set<OWLAxiom> newStructure = newNode.getStructure();
                     abox = df.getOWLClassAssertionAxiom(disjunct, newNode.getIndividual());
 
