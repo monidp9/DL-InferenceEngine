@@ -39,7 +39,6 @@ public class Reasoner {
     private boolean dfs(Node node){ //ragionare sull eliminazione dei puntatori e dei nodi 
 
         boolean isAppliedRule = false;
-        boolean ret = false;
         Node newNode = null;
         Set<OWLAxiom> structure = node.getStructure();
         Set<OWLAxiom> structureTmp = new TreeSet<>(structure);
@@ -65,12 +64,7 @@ public class Reasoner {
 
         }while (isAppliedRule);  
 
-<<<<<<< HEAD
-        // applica OR esaustivamente SASI
-=======
-
         // applica OR esaustivamente 
->>>>>>> f21dd012937eefb7137ed164bf5857b8322f42a6
         for (OWLAxiom abox : structure){
             if (abox instanceof OWLClassAssertionAxiom){ 
                 classExpression = ((OWLClassAssertionAxiom) abox).getClassExpression();
@@ -88,18 +82,6 @@ public class Reasoner {
                 terminato il ciclo si valutano le applicazioni delle regole esistenziali ed universali
             */
             if (isAppliedRule){
-<<<<<<< HEAD
-                // se la struttura con l'unione del primo disgiunto non è clash-free, la chiamata ricorsiva termina e ritorna false
-                if (isClashFree(newNode.getStructure())){
-                    node.setSxPtr(newNode);
-
-                    // se la chiamata ricorsiva a sx non è andata a buon fine si procede a dx
-                    if(!dfs(newNode)){ 
-                        // viene ripresa la struttura non contenente il primo disgiunto
-                        // structureTmp = new TreeSet<OWLAxiom>(structure); non serve più structureTmp è la struttura iniziale
-                        newNode = new Node(node.getIndividual()); 
-                        newNode.setStructure(new TreeSet<OWLAxiom>(structure));
-=======
 
                 //se la nuovstruttura non è clash-free o la chiamata a sx ritorna false si analizza il ramo dx
                 if (!isClashFree(newNode.getStructure()) || !dfs(newNode)){ 
@@ -108,7 +90,6 @@ public class Reasoner {
                     newNode = new Node(node.getIndividual()); 
                     node.setDxPtr(newNode);
                     newNode.setStructure(new TreeSet<OWLAxiom>(structure));
->>>>>>> f21dd012937eefb7137ed164bf5857b8322f42a6
 
                     //la regola è sempre applicata in quanto si aggiunge alla struttura l'altro disgiunto
                     isAppliedRule = handleUnionOf(classExpression, node, newNode); 
@@ -174,6 +155,7 @@ public class Reasoner {
         } else {
             return false;
         }
+        
         return true;
     } 
 
@@ -253,16 +235,10 @@ public class Reasoner {
             @Override
             public void visit(OWLObjectUnionOf ou) {
                 boolean flag = false;
-                OWLClassAssertionAxiom secondDisjunct = null; 
                 OWLClassAssertionAxiom abox;
 
-                for (OWLClassExpression disjunct : ou.getOperandsAsList()) {
-                    if(!flag){
-                        flag = true;
-                    } else {
-                        secondDisjunct = df.getOWLClassAssertionAxiom(disjunct, newNode.getIndividual());
-                    }
-                }
+                OWLClassExpression secondDisj = ou.getOperandsAsList().get(1);
+                OWLClassAssertionAxiom secondDisjAx = df.getOWLClassAssertionAxiom(secondDisj, newNode.getIndividual());
 
                 // quando termina la chiamata ricorsiva a sx e si risale, bisogna aggiungere il secondo disgiunto e scendere a dx
                 flag = false;
@@ -272,16 +248,19 @@ public class Reasoner {
                     abox = df.getOWLClassAssertionAxiom(disjunct, newNode.getIndividual());
 
                     if (!newStructure.contains(abox)){ 
-
-                        if ((node.getSxPtr()==null || flag) && !newStructure.contains(secondDisjunct)){
+                        /*
+                            La seconda condizione serve quando ripassando su una formula (P or B) e provenendo
+                            da B già selezionato, P non deve essere messo nella struttura.
+                        */
+                        if ((node.getSxPtr()==null || flag) && !newStructure.contains(secondDisjAx)){
                             newStructure.add(abox);
                             break;
                         } else {
                             flag = true;
                         }
                         
-                    } else if (newStructure.contains(abox)){                         
-                            break;
+                    } else {                         
+                        break;
                     }
                 }
             }
