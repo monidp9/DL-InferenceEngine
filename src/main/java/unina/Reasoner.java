@@ -40,8 +40,10 @@ public class Reasoner {
 
         boolean isAppliedRule = false;
         Node newNode = null;
+
         Set<OWLAxiom> structure = node.getStructure();
         Set<OWLAxiom> structureTmp = new TreeSet<>(structure);
+
         OWLClassExpression classExpression = null;
         OWLIndividual x1;
 
@@ -82,7 +84,6 @@ public class Reasoner {
                 terminato il ciclo si valutano le applicazioni delle regole esistenziali ed universali
             */
             if (isAppliedRule){
-
                 //se la nuovstruttura non è clash-free o la chiamata a sx ritorna false si analizza il ramo dx
                 if (!isClashFree(newNode.getStructure()) || !dfs(newNode)){ 
                     // viene ripresa la struttura non contenente il primo disgiunto
@@ -106,52 +107,50 @@ public class Reasoner {
         }
 
         if(isClashFree(structure)){
-            if (!isAppliedRule){ 
-                // applica ESISTENZIALE
-                do{    
-                    for (OWLAxiom abox : structure){
-                        if (abox instanceof OWLClassAssertionAxiom){ 
-                            classExpression = ((OWLClassAssertionAxiom) abox).getClassExpression();
-            
-                            if (classExpression instanceof OWLObjectSomeValuesFrom) {
-                                x1 = df.getOWLAnonymousIndividual();
-                                newNode = new Node(x1); //non è detto che viene utilizzato, anzi se non va a buon fine l'applicazione della regola è creato invano
-                                newNode.setStructure(new TreeSet<OWLAxiom>());
-                                structureTmp = new TreeSet<OWLAxiom>(structure); //si lavora con una struttura d'appogio perche il ruolo non puo essere inserito sulla struttura sulla quale si itera
-                                // structureTmp non servirebbe in quanto basterebbe indicare a "handleAllValuesFrom" semplicemente qual è la proprietà da tenere in considerazione
-                                isAppliedRule = handleSomeValuesFrom(classExpression, node, newNode, structureTmp);
-                            }
-                        }
-
-                        if (isAppliedRule){ 
-                            // applica UNIVERSALE esaustivamente
-                            for (OWLAxiom abox2 : structure) {
-                                if (abox2 instanceof OWLClassAssertionAxiom){ 
-                                    classExpression = ((OWLClassAssertionAxiom) abox2).getClassExpression();
-
-                                    if (classExpression instanceof OWLObjectAllValuesFrom){
-                                        handleAllValuesFrom(classExpression, node, newNode, structureTmp);
-                                    }
-                                }
-                            }
-                            
-                            if (isClashFree(newNode.getStructure())){ 
-                                node.setSxPtr(newNode);
-
-                                if(!dfs(newNode)){
-                                    return false;
-                                }
-                                isAppliedRule = false;
-                            } else {
-                                return false;
-                            }
+            // applica ESISTENZIALE
+            do{    
+                for (OWLAxiom abox : structure){
+                    if (abox instanceof OWLClassAssertionAxiom){ 
+                        classExpression = ((OWLClassAssertionAxiom) abox).getClassExpression();
+        
+                        if (classExpression instanceof OWLObjectSomeValuesFrom) {
+                            x1 = df.getOWLAnonymousIndividual();
+                            newNode = new Node(x1); //non è detto che viene utilizzato, anzi se non va a buon fine l'applicazione della regola è creato invano
+                            newNode.setStructure(new TreeSet<OWLAxiom>());
+                            structureTmp = new TreeSet<OWLAxiom>(structure); //si lavora con una struttura d'appogio perche il ruolo non puo essere inserito sulla struttura sulla quale si itera
+                            // structureTmp non servirebbe in quanto basterebbe indicare a "handleAllValuesFrom" semplicemente qual è la proprietà da tenere in considerazione
+                            isAppliedRule = handleSomeValuesFrom(classExpression, node, newNode, structureTmp);
                         }
                     }
-                    node.setStructure(new TreeSet<OWLAxiom>(structureTmp)); //capire se structureTmp genera problemi nel complesso funzionamento (?)
-                    structure = node.getStructure();
 
-                } while (isAppliedRule);  
-            }
+                    if (isAppliedRule){ 
+                        // applica UNIVERSALE esaustivamente
+                        for (OWLAxiom abox2 : structure) {
+                            if (abox2 instanceof OWLClassAssertionAxiom){ 
+                                classExpression = ((OWLClassAssertionAxiom) abox2).getClassExpression();
+
+                                if (classExpression instanceof OWLObjectAllValuesFrom){
+                                    handleAllValuesFrom(classExpression, node, newNode, structureTmp);
+                                }
+                            }
+                        }
+                        
+                        if (isClashFree(newNode.getStructure())){ 
+                            node.setSxPtr(newNode);
+
+                            if(!dfs(newNode)){
+                                return false;
+                            }
+                            isAppliedRule = false;
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                node.setStructure(new TreeSet<OWLAxiom>(structureTmp)); //capire se structureTmp genera problemi nel complesso funzionamento (?)
+                structure = node.getStructure();
+
+            } while (isAppliedRule); 
         } else {
             return false;
         }
