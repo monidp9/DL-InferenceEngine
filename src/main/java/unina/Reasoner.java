@@ -39,6 +39,7 @@ public class Reasoner {
     private boolean dfs(Node node){ //ragionare sull eliminazione dei puntatori e dei nodi 
 
         boolean isAppliedRule = false;
+        boolean ret = false;
         Node newNode = null;
         Set<OWLAxiom> structure = node.getStructure();
         Set<OWLAxiom> structureTmp = new TreeSet<>(structure);
@@ -64,7 +65,12 @@ public class Reasoner {
 
         }while (isAppliedRule);  
 
+<<<<<<< HEAD
         // applica OR esaustivamente SASI
+=======
+
+        // applica OR esaustivamente 
+>>>>>>> f21dd012937eefb7137ed164bf5857b8322f42a6
         for (OWLAxiom abox : structure){
             if (abox instanceof OWLClassAssertionAxiom){ 
                 classExpression = ((OWLClassAssertionAxiom) abox).getClassExpression();
@@ -72,6 +78,7 @@ public class Reasoner {
                 if (classExpression instanceof OWLObjectUnionOf) {
                     newNode = new Node(node.getIndividual());
                     newNode.setStructure(new TreeSet<OWLAxiom>(structure));
+                    node.setSxPtr(newNode);
                     isAppliedRule = handleUnionOf(classExpression, node, newNode);
                 }
             }
@@ -81,6 +88,7 @@ public class Reasoner {
                 terminato il ciclo si valutano le applicazioni delle regole esistenziali ed universali
             */
             if (isAppliedRule){
+<<<<<<< HEAD
                 // se la struttura con l'unione del primo disgiunto non è clash-free, la chiamata ricorsiva termina e ritorna false
                 if (isClashFree(newNode.getStructure())){
                     node.setSxPtr(newNode);
@@ -91,21 +99,27 @@ public class Reasoner {
                         // structureTmp = new TreeSet<OWLAxiom>(structure); non serve più structureTmp è la struttura iniziale
                         newNode = new Node(node.getIndividual()); 
                         newNode.setStructure(new TreeSet<OWLAxiom>(structure));
+=======
 
-                        //la regola è sempre applicata in quanto si aggiunge alla struttura l'altro disgiunto
-                        isAppliedRule = handleUnionOf(classExpression, node, newNode); 
+                //se la nuovstruttura non è clash-free o la chiamata a sx ritorna false si analizza il ramo dx
+                if (!isClashFree(newNode.getStructure()) || !dfs(newNode)){ 
+                    // viene ripresa la struttura non contenente il primo disgiunto
+                    // structureTmp = new TreeSet<OWLAxiom>(structure); non serve più structureTmp è la struttura iniziale
+                    newNode = new Node(node.getIndividual()); 
+                    node.setDxPtr(newNode);
+                    newNode.setStructure(new TreeSet<OWLAxiom>(structure));
+>>>>>>> f21dd012937eefb7137ed164bf5857b8322f42a6
 
-                        if (isClashFree(newNode.getStructure())){ 
-                            node.setDxPtr(newNode);
-                            return dfs(newNode);
-                        } else {
-                            return false;
-                        }                     
+                    //la regola è sempre applicata in quanto si aggiunge alla struttura l'altro disgiunto
+                    isAppliedRule = handleUnionOf(classExpression, node, newNode); 
+
+                    if (isClashFree(newNode.getStructure())){ 
+                        return dfs(newNode);
                     } else {
-                        return true;
-                    }
+                        return false;
+                    }                     
                 } else {
-                    return false;
+                    return true;
                 }
             }
         }
@@ -122,7 +136,9 @@ public class Reasoner {
                                 x1 = df.getOWLAnonymousIndividual();
                                 newNode = new Node(x1); //non è detto che viene utilizzato, anzi se non va a buon fine l'applicazione della regola è creato invano
                                 newNode.setStructure(new TreeSet<OWLAxiom>());
-                                isAppliedRule = handleSomeValuesFrom(classExpression, node, newNode);
+                                structureTmp = new TreeSet<OWLAxiom>(structure); //si lavora con una struttura d'appogio perche il ruolo non puo essere inserito sulla struttura sulla quale si itera
+                                // structureTmp non servirebbe in quanto basterebbe indicare a "handleAllValuesFrom" semplicemente qual è la proprietà da tenere in considerazione
+                                isAppliedRule = handleSomeValuesFrom(classExpression, node, newNode, structureTmp);
                             }
                         }
 
@@ -133,7 +149,7 @@ public class Reasoner {
                                     classExpression = ((OWLClassAssertionAxiom) abox2).getClassExpression();
 
                                     if (classExpression instanceof OWLObjectAllValuesFrom){
-                                        handleAllValuesFrom(classExpression, node, newNode);
+                                        handleAllValuesFrom(classExpression, node, newNode, structureTmp);
                                     }
                                 }
                             }
@@ -150,6 +166,9 @@ public class Reasoner {
                             }
                         }
                     }
+                    node.setStructure(new TreeSet<OWLAxiom>(structureTmp)); //capire se structureTmp genera problemi nel complesso funzionamento (?)
+                    structure = node.getStructure();
+
                 } while (isAppliedRule);  
             }
         } else {
@@ -158,7 +177,7 @@ public class Reasoner {
         return true;
     } 
 
-    private boolean handleAllValuesFrom(OWLClassExpression axiom, Node node, Node newNode){
+    private boolean handleAllValuesFrom(OWLClassExpression axiom, Node node, Node newNode, Set<OWLAxiom> structureTmp){
 
         int strSize = newNode.getStructure().size();
 
@@ -169,12 +188,11 @@ public class Reasoner {
                 OWLClassExpression filler = avf.getFiller();
                 OWLObjectPropertyExpression property = avf.getProperty();
                 OWLObjectPropertyAssertionAxiom propertyAxiom = df.getOWLObjectPropertyAssertionAxiom(property, node.getIndividual(), newNode.getIndividual());
-                Set<OWLAxiom> structure = node.getStructure();
                 Set<OWLAxiom> newStructure = newNode.getStructure();
                 
-                if (structure.contains(propertyAxiom)){
+                if (structureTmp.contains(propertyAxiom)){
                     OWLClassAssertionAxiom abox = df.getOWLClassAssertionAxiom(filler, newNode.getIndividual());
-                    if(!newStructure.contains(abox)){
+                    if(!newStructure.contains(abox)){ //inutile, essendo un set non verrebbe aggiunto se già ci fosse
                         newStructure.add(abox);
                     }
                 }
@@ -184,7 +202,7 @@ public class Reasoner {
         return strSize < newNode.getStructure().size();
     }
 
-    private boolean handleSomeValuesFrom(OWLClassExpression classExpression, Node node, Node newNode) {
+    private boolean handleSomeValuesFrom(OWLClassExpression classExpression, Node node, Node newNode, Set<OWLAxiom> structureTmp) {
         
         int strSize = newNode.getStructure().size();
 
@@ -199,7 +217,7 @@ public class Reasoner {
                 Set<OWLAxiom> newStructure = newNode.getStructure();
 
                 if(!structure.contains(propertyAxiom)){
-                    structure.add(propertyAxiom);
+                    structureTmp.add(propertyAxiom);
                     OWLClassAssertionAxiom abox = df.getOWLClassAssertionAxiom(filler, newNode.getIndividual());
                     newStructure.add(abox);
                 }

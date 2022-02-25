@@ -389,8 +389,8 @@ public class IOParser extends JDialog implements ActionListener{
         IOParser io = new IOParser();
 
         // caricamento TBox
-        String sasiPath = "/Users/salvatoreamodio/Desktop/Intelligent Web/progetto/DL-InferenceEngine/food.man.owl";
-        String filePath = "/Users/monidp/Desktop/IWProject/inference-engine-dl/food.man.owl";
+        String filePath = "food.man.owl";
+
         io.loadOntology(filePath);
 
         // lettura e traduzione in concetto
