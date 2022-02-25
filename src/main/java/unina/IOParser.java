@@ -127,10 +127,11 @@ public class IOParser extends JDialog implements ActionListener{
             if(ax instanceof OWLObjectPropertyRangeAxiom) {
                 OWLObjectPropertyRangeAxiom rangeAx = (OWLObjectPropertyRangeAxiom) ax;
                 OWLObjectPropertyExpression prop = rangeAx.getProperty();
-                superClass = rangeAx.getRange();
-
+    
                 subClass = df.getOWLObjectSomeValuesFrom(prop, df.getOWLThing());
                 subClass = subClass.getComplementNNF();
+
+                superClass = df.getOWLObjectAllValuesFrom(prop, rangeAx.getRange());
 
                 operand = df.getOWLObjectUnionOf(Stream.of(subClass, superClass));
 
@@ -141,7 +142,9 @@ public class IOParser extends JDialog implements ActionListener{
                 }
             }
         }
-        concept = df.getOWLObjectIntersectionOf(Stream.of(gciConj, equivConj, domRangeConj));
+        Stream<OWLClassExpression> operands = Stream.of(gciConj, equivConj, domRangeConj);
+        concept = df.getOWLObjectIntersectionOf(operands.filter(Objects::nonNull));
+
         return concept;
     }
 
@@ -389,18 +392,23 @@ public class IOParser extends JDialog implements ActionListener{
         IOParser io = new IOParser();
 
         // caricamento TBox
-        String filePath = "food.man.owl";
+        String filePath = "foodeasy.man.owl";
 
         io.loadOntology(filePath);
 
         // lettura e traduzione in concetto
         OWLClassExpression concept = io.readAndTraslateExpr();
+        OWLClassExpression tbox = io.fromTBoxToConcept();
         
-        System.out.println("\n ------ TRASLATED ------");
-        System.out.println("\n" + concept + "\n");
+        System.out.println("\n ------ TRANSLATED ------");
+        System.out.println("\nCONCEPT: \n" + concept + "\n");
+        System.out.println("\nTBOX: \n" + tbox + "\n");
 
+    
         Reasoner reasoner = new Reasoner();
-        System.out.println("TABLEAUX : "+reasoner.reasoning(concept));
+        reasoner.setTBoxConcept(null);
+
+        System.out.println("\nTABLEAUX : "+reasoner.reasoning(concept));
 
         System.exit(0);
     }

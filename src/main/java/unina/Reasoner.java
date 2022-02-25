@@ -23,15 +23,23 @@ public class Reasoner {
     
     private Node node;
     private OWLDataFactory df = OWLManager.getOWLDataFactory();
+    private OWLClassExpression tbox;
 
-    public Reasoner(){}
-    
+    public void setTBoxConcept(OWLClassExpression tbox) {
+        this.tbox = tbox;
+    }
+
     public boolean reasoning(OWLClassExpression C){ //capire se creare l'ontologia qua dentro
 
         OWLIndividual x0 = df.getOWLAnonymousIndividual();
         this.node = new Node(x0);
+
         Set<OWLAxiom> structure = node.getStructure();
+
         structure.add(df.getOWLClassAssertionAxiom(C, x0));
+        if(this.tbox != null) {
+            structure.add(df.getOWLClassAssertionAxiom(tbox, x0));
+        }
         
         return  dfs(node);
     }
@@ -117,6 +125,7 @@ public class Reasoner {
                             x1 = df.getOWLAnonymousIndividual();
                             newNode = new Node(x1); //non è detto che viene utilizzato, anzi se non va a buon fine l'applicazione della regola è creato invano
                             newNode.setStructure(new TreeSet<OWLAxiom>());
+
                             structureTmp = new TreeSet<OWLAxiom>(structure); //si lavora con una struttura d'appogio perche il ruolo non puo essere inserito sulla struttura sulla quale si itera
                             // structureTmp non servirebbe in quanto basterebbe indicare a "handleAllValuesFrom" semplicemente qual è la proprietà da tenere in considerazione
                             isAppliedRule = handleSomeValuesFrom(classExpression, node, newNode, structureTmp);
@@ -124,11 +133,16 @@ public class Reasoner {
                     }
 
                     if (isAppliedRule){ 
+                        if(this.tbox != null) {
+                            // se l'esistenziale è stato applicato si aggiunge al nuovo individuo la tbox
+                            OWLClassAssertionAxiom tboxAss = df.getOWLClassAssertionAxiom(tbox, newNode.getIndividual());
+                            newNode.getStructure().add(tboxAss);
+                        }
+
                         // applica UNIVERSALE esaustivamente
                         for (OWLAxiom abox2 : structure) {
                             if (abox2 instanceof OWLClassAssertionAxiom){ 
                                 classExpression = ((OWLClassAssertionAxiom) abox2).getClassExpression();
-
                                 if (classExpression instanceof OWLObjectAllValuesFrom){
                                     handleAllValuesFrom(classExpression, node, newNode, structureTmp);
                                 }
@@ -137,7 +151,6 @@ public class Reasoner {
                         
                         if (isClashFree(newNode.getStructure())){ 
                             node.setSxPtr(newNode);
-
                             if(!dfs(newNode)){
                                 return false;
                             }
@@ -199,6 +212,7 @@ public class Reasoner {
 
                 if(!structure.contains(propertyAxiom)){
                     structureTmp.add(propertyAxiom);
+
                     OWLClassAssertionAxiom abox = df.getOWLClassAssertionAxiom(filler, newNode.getIndividual());
                     newStructure.add(abox);
                 }
