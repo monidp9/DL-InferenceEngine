@@ -18,6 +18,7 @@ import org.semanticweb.owlapi.model.OWLObjectPropertyExpression;
 import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
 import org.semanticweb.owlapi.model.OWLObjectUnionOf;
 
+
 public class Reasoner {
     
     private Node node;
@@ -63,7 +64,7 @@ public class Reasoner {
 
         }while (isAppliedRule);  
 
-        // applica OR esaustivamente 
+        // applica OR esaustivamente SASI
         for (OWLAxiom abox : structure){
             if (abox instanceof OWLClassAssertionAxiom){ 
                 classExpression = ((OWLClassAssertionAxiom) abox).getClassExpression();
@@ -79,9 +80,9 @@ public class Reasoner {
                 se la regola non viene applicata viene valutata la prossima abox; 
                 terminato il ciclo si valutano le applicazioni delle regole esistenziali ed universali
             */
-            if (isAppliedRule){ 
+            if (isAppliedRule){
                 // se la struttura con l'unione del primo disgiunto non è clash-free, la chiamata ricorsiva termina e ritorna false
-                if (isClashFree(newNode.getStructure())){ 
+                if (isClashFree(newNode.getStructure())){
                     node.setSxPtr(newNode);
 
                     // se la chiamata ricorsiva a sx non è andata a buon fine si procede a dx
@@ -108,7 +109,6 @@ public class Reasoner {
                 }
             }
         }
-
 
         if(isClashFree(structure)){
             if (!isAppliedRule){ 
@@ -138,7 +138,6 @@ public class Reasoner {
                                 }
                             }
                             
-                    
                             if (isClashFree(newNode.getStructure())){ 
                                 node.setSxPtr(newNode);
 
@@ -221,8 +220,6 @@ public class Reasoner {
                     OWLClassAssertionAxiom abox = df.getOWLClassAssertionAxiom(ce, node.getIndividual());
 
                     if (!structure.contains(abox)){
-                        System.out.println("nel ciclo \n");
-                        System.out.println(ce);
                         structure.add(abox);
                     }
                 }
@@ -240,7 +237,6 @@ public class Reasoner {
                 boolean flag = false;
                 OWLClassAssertionAxiom secondDisjunct = null; 
                 OWLClassAssertionAxiom abox;
-
 
                 for (OWLClassExpression disjunct : ou.getOperandsAsList()) {
                     if(!flag){

@@ -268,6 +268,7 @@ public class IOParser extends JDialog implements ActionListener{
                     }
  
                     t.setText(sl);
+                    br.close();
                 }
                 catch (Exception evt) {
                     JOptionPane.showMessageDialog(d, evt.getMessage());
