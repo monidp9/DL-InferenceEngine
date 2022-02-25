@@ -10,25 +10,28 @@ Prefix: t: <http://owl.api.tutorial#>
 Ontology: <http://owl.api.tutorial>
 
 
+Class: t:Animal
+
+
+Class: t:Person
+
+    SubClassOf: 
+        t:eats some t:Person
+        
+
 ObjectProperty: t:eats
 
     Domain: 
        t:Person
     
     Range: 
-        t:Food
-    
-    
-Class: t:Food
+        t:Person
 
-    
-Class: t:Meat
 
-    SubClassOf: 
-        t:Food
-    
-    
-Class: t:Person
+ObjectProperty: t:loves
 
-    SubClassOf: 
-        not (t:Food)
+    Domain:
+        t:Person
+    
+    Range:
+        t:Animal

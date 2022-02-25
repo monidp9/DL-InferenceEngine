@@ -392,7 +392,7 @@ public class IOParser extends JDialog implements ActionListener{
         IOParser io = new IOParser();
 
         // caricamento TBox
-        String filePath = "foodeasy.man.owl";
+        String filePath = "loop.man.owl";
 
         io.loadOntology(filePath);
 
@@ -404,9 +404,8 @@ public class IOParser extends JDialog implements ActionListener{
         System.out.println("\nCONCEPT: \n" + concept + "\n");
         System.out.println("\nTBOX: \n" + tbox + "\n");
 
-    
         Reasoner reasoner = new Reasoner();
-        reasoner.setTBoxConcept(null);
+        reasoner.setTBoxConcept(tbox);
 
         System.out.println("\nTABLEAUX : "+reasoner.reasoning(concept));
 

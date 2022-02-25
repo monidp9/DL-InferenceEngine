@@ -293,6 +293,10 @@ public class Reasoner {
                 if(classExpression instanceof OWLClass){
                     complementClassExpression = classExpression.getObjectComplementOf();
 
+                    if(classExpression.equals(df.getOWLNothing())) {
+                        return false;
+                    }
+
                     for(OWLAxiom abox2: structure){
                         if (abox2 instanceof OWLClassAssertionAxiom){ 
                             classExpression = ((OWLClassAssertionAxiom) abox2).getClassExpression();
@@ -302,7 +306,7 @@ public class Reasoner {
                         }
                     }
                 }
-            } 
+            }
         }
         return true;
     }

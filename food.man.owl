@@ -60,6 +60,6 @@ Class: t:Vegetarian
 Class: t:VegetarianFood
 
     SubClassOf: 
-        not (t:Food)
+        t:Food
     
     
