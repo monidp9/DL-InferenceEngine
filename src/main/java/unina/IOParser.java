@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalLookAndFeel;
@@ -51,101 +50,9 @@ public class IOParser extends JDialog implements ActionListener{
         man = OWLManager.createOWLOntologyManager();  
     }
 
-    public OWLClassExpression fromTBoxToConcept() {
-        
-        /*
-         * Estrapola la TBox dall'ontologia precedentemente caricata e la 
-         * trasforma in un concetto. 
-         */
-
-        OWLSubClassOfAxiom subClassAx;
-        OWLEquivalentClassesAxiom equivClassAx;
-
-        OWLClassExpression subClass, superClass, concept = null, operand = null;
-        OWLClassExpression gciConj = null, equivConj = null, domRangeConj = null;
-
-        OWLDataFactory df = man.getOWLDataFactory();
-
+    public  List<OWLAxiom> getTbox() {
         List<OWLAxiom> axioms = o.logicalAxioms().collect(Collectors.toList());
-
-        for(OWLAxiom ax: axioms) {
-            // gestione delle GCI
-            if(ax instanceof OWLSubClassOfAxiom) {
-                subClassAx = (OWLSubClassOfAxiom) ax;
-                
-                subClass = subClassAx.getSubClass();
-                superClass = subClassAx.getSuperClass();
-                
-                subClass = subClass.getComplementNNF();
-                operand = df.getOWLObjectUnionOf(Stream.of(subClass, superClass));
-
-                if(gciConj != null) {
-                    gciConj = df.getOWLObjectIntersectionOf(Stream.of(gciConj, operand));
-                } else {
-                    gciConj = operand;
-                }
-            }
-
-            // gestione delle equivalenze
-            if(ax instanceof OWLEquivalentClassesAxiom) {
-                equivClassAx = (OWLEquivalentClassesAxiom) ax;
-
-                for(OWLSubClassOfAxiom sca: equivClassAx.asOWLSubClassOfAxioms()) {
-                    subClass = sca.getSubClass();
-                    superClass = sca.getSuperClass();
-
-                    subClass = subClass.getComplementNNF();
-                    operand = df.getOWLObjectUnionOf(Stream.of(subClass, superClass));
-
-                    if(equivConj != null) {
-                        equivConj = df.getOWLObjectIntersectionOf(Stream.of(equivConj, operand));
-                    } else {
-                        equivConj = operand;
-                    }
-                }
-            }
-
-            // gestione dominio di un ruolo
-            if(ax instanceof OWLObjectPropertyDomainAxiom) {
-                OWLObjectPropertyDomainAxiom domainAx = (OWLObjectPropertyDomainAxiom) ax;
-                subClassAx = domainAx.asOWLSubClassOfAxiom();
-
-                subClass = subClassAx.getSubClass();
-                superClass = subClassAx.getSuperClass();
-
-                subClass = subClass.getComplementNNF();
-                operand = df.getOWLObjectUnionOf(Stream.of(subClass, superClass));
-
-                if(domRangeConj != null) {
-                    domRangeConj = df.getOWLObjectIntersectionOf(Stream.of(domRangeConj, operand));
-                } else {
-                    domRangeConj = operand;
-                }
-            }
-
-            // gestione codominio di un ruolo
-            if(ax instanceof OWLObjectPropertyRangeAxiom) {
-                OWLObjectPropertyRangeAxiom rangeAx = (OWLObjectPropertyRangeAxiom) ax;
-                OWLObjectPropertyExpression prop = rangeAx.getProperty();
-    
-                subClass = df.getOWLObjectSomeValuesFrom(prop, df.getOWLThing());
-                subClass = subClass.getComplementNNF();
-
-                superClass = df.getOWLObjectAllValuesFrom(prop, rangeAx.getRange());
-
-                operand = df.getOWLObjectUnionOf(Stream.of(subClass, superClass));
-
-                if(domRangeConj != null) {
-                    domRangeConj = df.getOWLObjectIntersectionOf(Stream.of(domRangeConj, operand));
-                } else {
-                    domRangeConj = operand;
-                }
-            }
-        }
-        Stream<OWLClassExpression> operands = Stream.of(gciConj, equivConj, domRangeConj);
-        concept = df.getOWLObjectIntersectionOf(operands.filter(Objects::nonNull));
-
-        return concept;
+        return axioms;
     }
 
     public OWLClassExpression readAndTraslateExpr() {
@@ -388,27 +295,27 @@ public class IOParser extends JDialog implements ActionListener{
         return concept;
     }
 
+
     public static void main(String[] args) {    
+
         IOParser io = new IOParser();
+        Reasoner reasoner = new Reasoner();
 
         // caricamento TBox
-        String filePath = "loop.man.owl";
-
+        String filePath = "food.man.owl";
         io.loadOntology(filePath);
+        List<OWLAxiom> tbox = io.getTbox();
 
         // lettura e traduzione in concetto
         OWLClassExpression concept = io.readAndTraslateExpr();
-        OWLClassExpression tbox = io.fromTBoxToConcept();
-        
+
         System.out.println("\n ------ TRANSLATED ------");
         System.out.println("\nCONCEPT: \n" + concept + "\n");
-        System.out.println("\nTBOX: \n" + tbox + "\n");
 
-        Reasoner reasoner = new Reasoner();
-        reasoner.setTBoxConcept(tbox);
-
+        //reasoner.activeLazyUnfolding();
+        reasoner.setTbox(tbox);
+        
         System.out.println("\nTABLEAUX : "+reasoner.reasoning(concept));
-
         System.exit(0);
     }
 }

@@ -1,7 +1,10 @@
 package unina;
 
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Stream;
+import java.util.*;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLAxiom;
@@ -10,35 +13,58 @@ import org.semanticweb.owlapi.model.OWLClassAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLClassExpressionVisitor;
 import org.semanticweb.owlapi.model.OWLDataFactory;
+import org.semanticweb.owlapi.model.OWLEquivalentClassesAxiom;
 import org.semanticweb.owlapi.model.OWLIndividual;
 import org.semanticweb.owlapi.model.OWLObjectAllValuesFrom;
 import org.semanticweb.owlapi.model.OWLObjectIntersectionOf;
 import org.semanticweb.owlapi.model.OWLObjectPropertyAssertionAxiom;
+import org.semanticweb.owlapi.model.OWLObjectPropertyDomainAxiom;
 import org.semanticweb.owlapi.model.OWLObjectPropertyExpression;
+import org.semanticweb.owlapi.model.OWLObjectPropertyRangeAxiom;
 import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
 import org.semanticweb.owlapi.model.OWLObjectUnionOf;
+import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
+
+import javafx.util.Pair;
 
 
 public class Reasoner {
     
     private Node node;
     private OWLDataFactory df = OWLManager.getOWLDataFactory();
-    private OWLClassExpression tbox;
+    private List<OWLAxiom> tbox = null;
+    private OWLClassExpression tboxInConcept = null;
+    private boolean usingLazyUnfolding = false;
 
-    public void setTBoxConcept(OWLClassExpression tbox) {
-        this.tbox = tbox;
-    }
+    // ----------------------------------------------------------- reasoning ----------------------------------------------------------- //
 
-    public boolean reasoning(OWLClassExpression C){ //capire se creare l'ontologia qua dentro
-
+    public boolean reasoning(OWLClassExpression C){
+        OWLClassExpression translatedTbox = null;
         OWLIndividual x0 = df.getOWLAnonymousIndividual();
         this.node = new Node(x0);
 
         Set<OWLAxiom> structure = node.getStructure();
-
         structure.add(df.getOWLClassAssertionAxiom(C, x0));
-        if(this.tbox != null) {
-            structure.add(df.getOWLClassAssertionAxiom(tbox, x0));
+
+        if(usingLazyUnfolding){
+            Pair<List<OWLAxiom>, List<OWLAxiom>> tboxLazyUnfolding = lazyUnfolding(tbox); //capire se creare un tipo apposito o continuare ad usare Pair
+            List<OWLAxiom> Tg = tboxLazyUnfolding.getValue();
+
+            if(Tg != null && !Tg.isEmpty()){
+                OWLClassExpression translatedTg = fromTBoxToConcept(Tg);
+                System.out.println("\nTg: \n" + translatedTg + "\n");      
+                structure.add(df.getOWLClassAssertionAxiom(translatedTg, x0));
+            } 
+
+            // gestire Tu
+
+        } else {
+            if(tbox != null && !tbox.isEmpty()) {
+                translatedTbox = fromTBoxToConcept(tbox);
+                System.out.println("\nTBOX: \n" + translatedTbox + "\n");      
+                this.tboxInConcept = translatedTbox;
+                structure.add(df.getOWLClassAssertionAxiom(translatedTbox, x0));
+            }
         }
         
         return  dfs(node);
@@ -135,7 +161,7 @@ public class Reasoner {
                     if (isAppliedRule){ 
                         if(this.tbox != null) {
                             // se l'esistenziale è stato applicato si aggiunge al nuovo individuo la tbox
-                            OWLClassAssertionAxiom tboxAss = df.getOWLClassAssertionAxiom(tbox, newNode.getIndividual());
+                            OWLClassAssertionAxiom tboxAss = df.getOWLClassAssertionAxiom(tboxInConcept, newNode.getIndividual());
                             newNode.getStructure().add(tboxAss);
                         }
 
@@ -310,4 +336,187 @@ public class Reasoner {
         }
         return true;
     }
+
+    // ----------------------------------------------------------- lazy unfolding ----------------------------------------------------------- //
+
+    public void activeLazyUnfolding() {
+        this.usingLazyUnfolding = true;
+    }
+
+    private Pair<List<OWLAxiom>, List<OWLAxiom>> lazyUnfolding(List<OWLAxiom> tbox){
+
+        List<OWLAxiom> Tu = new LinkedList<>();
+        List<OWLAxiom> Tg = new LinkedList<>();
+
+        OWLEquivalentClassesAxiom equivClassAx;
+        OWLSubClassOfAxiom subClassAx;
+
+        // while (!tbox.isEmpty()){ // lo togliamo perchè presupponiamo che la tbox sia formata solo da OWLEquivalentClassesAxiom e OWLSubClassOfAxiom
+        
+        for(OWLAxiom axiom : tbox){
+            if (axiom instanceof OWLEquivalentClassesAxiom){
+                equivClassAx = (OWLEquivalentClassesAxiom) axiom;
+
+                if(isUnfoldableForEquivalent(Tu, equivClassAx)){
+                    Tu.add(equivClassAx);
+                } else {
+                    Tg.add(equivClassAx);
+                } 
+            }
+        }
+
+        for(OWLAxiom axiom : tbox){
+            if (axiom instanceof OWLSubClassOfAxiom){
+                subClassAx = (OWLSubClassOfAxiom) axiom;
+
+                if(isUnfoldableForSubClass(Tu, subClassAx)){
+                    Tu.add(subClassAx);
+                } else {
+                    Tg.add(subClassAx);
+                } 
+            }
+        }
+
+        return new Pair<List<OWLAxiom>, List<OWLAxiom>>(Tu, Tg);
+    }
+
+    private boolean isUnfoldableForSubClass(List<OWLAxiom> Tu, OWLSubClassOfAxiom subClassAx) {
+        return false;
+    }
+
+    private boolean isUnfoldableForEquivalent(List<OWLAxiom> Tu, OWLEquivalentClassesAxiom equivClassAx) {
+
+        OWLClassExpression A,C = null;
+
+        for(OWLSubClassOfAxiom sca: equivClassAx.asOWLSubClassOfAxioms()) {
+            A = sca.getSubClass();
+            C = sca.getSuperClass();
+
+            if(isCyclicalConcept(Tu,A,C)){
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isCyclicalConcept(List<OWLAxiom> Tu, OWLClassExpression A, OWLClassExpression C) {
+        
+        if(C instanceof OWLObjectIntersectionOf){
+
+        }
+        if(C instanceof OWLObjectUnionOf){
+
+        }
+        if(C instanceof OWLObjectSomeValuesFrom){
+
+        }
+        if(C instanceof OWLObjectAllValuesFrom){
+
+        }
+
+        return false;
+    }
+
+    // ----------------------------------------------------------- tbox management ----------------------------------------------------------- //
+
+
+    public void setTbox(List<OWLAxiom> tbox){
+        this.tbox = tbox;
+    }
+
+    private OWLClassExpression fromTBoxToConcept(List<OWLAxiom> tbox) {
+
+        /*
+        * Trasforma Tbox in ingresso in un concetto. 
+        */
+
+        OWLSubClassOfAxiom subClassAx;
+        OWLEquivalentClassesAxiom equivClassAx;
+
+        OWLClassExpression subClass, superClass, concept = null, operand = null;
+        OWLClassExpression gciConj = null, equivConj = null, domRangeConj = null;
+
+
+        for(OWLAxiom ax: tbox) {
+            // gestione delle GCI
+            if(ax instanceof OWLSubClassOfAxiom) {
+                subClassAx = (OWLSubClassOfAxiom) ax;
+
+                subClass = subClassAx.getSubClass();
+                superClass = subClassAx.getSuperClass();
+                
+                subClass = subClass.getComplementNNF();
+                operand = df.getOWLObjectUnionOf(Stream.of(subClass, superClass));
+
+                if(gciConj != null) {
+                    gciConj = df.getOWLObjectIntersectionOf(Stream.of(gciConj, operand));
+                } else {
+                    gciConj = operand;
+                }
+            }
+
+            // gestione delle equivalenze
+            if(ax instanceof OWLEquivalentClassesAxiom) {
+                equivClassAx = (OWLEquivalentClassesAxiom) ax;
+
+                for(OWLSubClassOfAxiom sca: equivClassAx.asOWLSubClassOfAxioms()) {
+                    
+                    subClass = sca.getSubClass();
+                    superClass = sca.getSuperClass();
+
+                    subClass = subClass.getComplementNNF();
+                    operand = df.getOWLObjectUnionOf(Stream.of(subClass, superClass));
+
+                    if(equivConj != null) {
+                        equivConj = df.getOWLObjectIntersectionOf(Stream.of(equivConj, operand));
+                    } else {
+                        equivConj = operand;
+                    }
+                }
+            }
+
+            // gestione dominio di un ruolo
+            if(ax instanceof OWLObjectPropertyDomainAxiom) {
+                OWLObjectPropertyDomainAxiom domainAx = (OWLObjectPropertyDomainAxiom) ax;
+                subClassAx = domainAx.asOWLSubClassOfAxiom();
+
+                subClass = subClassAx.getSubClass();
+                superClass = subClassAx.getSuperClass();
+
+                subClass = subClass.getComplementNNF();
+                operand = df.getOWLObjectUnionOf(Stream.of(subClass, superClass));
+
+                if(domRangeConj != null) {
+                    domRangeConj = df.getOWLObjectIntersectionOf(Stream.of(domRangeConj, operand));
+                } else {
+                    domRangeConj = operand;
+                }
+            }
+
+            // gestione codominio di un ruolo
+            if(ax instanceof OWLObjectPropertyRangeAxiom) {
+                OWLObjectPropertyRangeAxiom rangeAx = (OWLObjectPropertyRangeAxiom) ax;
+                OWLObjectPropertyExpression prop = rangeAx.getProperty();
+    
+                subClass = df.getOWLObjectSomeValuesFrom(prop, df.getOWLThing());
+                subClass = subClass.getComplementNNF();
+
+                superClass = df.getOWLObjectAllValuesFrom(prop, rangeAx.getRange());
+
+                operand = df.getOWLObjectUnionOf(Stream.of(subClass, superClass));
+
+                if(domRangeConj != null) {
+                    domRangeConj = df.getOWLObjectIntersectionOf(Stream.of(domRangeConj, operand));
+                } else {
+                    domRangeConj = operand;
+                }
+            }
+        }
+        Stream<OWLClassExpression> operands = Stream.of(gciConj, equivConj, domRangeConj);
+        concept = df.getOWLObjectIntersectionOf(operands.filter(Objects::nonNull));
+
+        return concept;
+    }
+
 }

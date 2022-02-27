@@ -46,7 +46,6 @@ public class App
 
         OWLDataFactory df = o.getOWLOntologyManager().getOWLDataFactory();
     
-        OWLClass Student = df.getOWLClass(IOR + "#Student");
         OWLClass Person = df.getOWLClass(IOR + "#Person");
         OWLClass University = df.getOWLClass(IOR + "#University");
         OWLClass Course = df.getOWLClass(IOR + "#Course");
