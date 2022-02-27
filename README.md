@@ -5,7 +5,7 @@ For this academic project it has been required to build an inference engine base
 1. Lazy unfolding 
 2. Blocking technique 
 
-The first one it's required for speeding up the computation. The latter it's necessary to preserve the decidability of the inference engine, otherwise lost beacause of the not empty TBox T. The input is:
+The first one is required for speeding up the computation. The latter it's necessary to preserve the decidability of the inference engine, otherwise lost beacause of the not empty TBox T. The input is:
 
 | Concept | TBox |
 | :---: | :---: |
