@@ -33,7 +33,7 @@ public class Reasoner {
     private List<OWLAxiom> tbox = null;
     private OWLClassExpression tboxInConcept = null;
     private List<OWLAxiom> Tu;
-    private boolean usingLazyUnfolding = false;
+    private boolean useLazyUnfolding = false;
 
     // ----------------------------------------------------------- reasoning ----------------------------------------------------------- //
 
@@ -45,11 +45,15 @@ public class Reasoner {
         Set<OWLAxiom> structure = node.getStructure();
         structure.add(df.getOWLClassAssertionAxiom(C, x0));
 
-        if(usingLazyUnfolding){
+        if(useLazyUnfolding && tbox != null && !tbox.isEmpty()){
             Pair<List<OWLAxiom>, List<OWLAxiom>> tboxLazyUnfolding = lazyUnfoldingPartitioning(tbox); 
             List<OWLAxiom> Tg = tboxLazyUnfolding.getValue();
             List<OWLAxiom> Tu = tboxLazyUnfolding.getKey();
             this.Tu = Tu;
+
+            System.out.println("Tu: " + Tu);
+            System.out.println("Tg: " + Tg);
+
 
             if(Tg != null && !Tg.isEmpty()){
                 OWLClassExpression translatedTg = fromTBoxToConcept(Tg);
@@ -57,14 +61,11 @@ public class Reasoner {
                 structure.add(df.getOWLClassAssertionAxiom(translatedTg, x0));
                 
             } 
-
         } else {
-            if(tbox != null && !tbox.isEmpty()) {
-                translatedTbox = fromTBoxToConcept(tbox);
-                System.out.println("\nTBOX: \n" + translatedTbox + "\n");      
-                this.tboxInConcept = translatedTbox;
-                structure.add(df.getOWLClassAssertionAxiom(translatedTbox, x0));
-            }
+            translatedTbox = fromTBoxToConcept(tbox);
+            System.out.println("\nTBOX: \n" + translatedTbox + "\n");      
+            this.tboxInConcept = translatedTbox;
+            structure.add(df.getOWLClassAssertionAxiom(translatedTbox, x0));
         }
         
         return dfs(node);
@@ -400,10 +401,15 @@ public class Reasoner {
     // ----------------------------------------------------------- lazy unfolding ----------------------------------------------------------- //
 
     public void activeLazyUnfolding() {
-        this.usingLazyUnfolding = true;
+        this.useLazyUnfolding = true;
     }
 
     private Pair<List<OWLAxiom>, List<OWLAxiom>> lazyUnfoldingPartitioning(List<OWLAxiom> tbox){
+        /* 
+         * tale metodo partiziona la tbox andando a creare due liste di assiomi 
+         * Tu contenente solo assiomi unfoldable e Tg.
+         * Il tipo di ritorno pair contiene nell'ordine Tu e Tg.
+         */
 
         List<OWLAxiom> Tu = new LinkedList<>();
         List<OWLAxiom> Tg = new LinkedList<>();
@@ -435,6 +441,8 @@ public class Reasoner {
                 } else {
                     Tg.add(subClassAx);
                 } 
+            } else {
+                Tg.add(axiom);
             }
         }
 
@@ -591,7 +599,22 @@ public class Reasoner {
         if(C instanceof OWLClass){
             if (C.equals(A)){ //vale anche se c'è il complemento ???
                 ret.set(0, false);
-            } 
+            } else {
+                for (OWLAxiom axiom: Tu){
+                    if(axiom instanceof OWLEquivalentClassesAxiom){
+                        OWLEquivalentClassesAxiom equivClassAx = (OWLEquivalentClassesAxiom) axiom; 
+                        List<OWLClassExpression> equivParts = equivClassAx.classExpressions().collect(Collectors.toList());
+
+                        OWLClassExpression lhsEquiv = equivParts.get(0);
+
+                        if(C.equals(lhsEquiv)){
+
+                            OWLClassExpression rhsEquiv = equivParts.get(1);
+                            isCyclicalConcept(Tu, A, rhsEquiv, ret);
+                        }
+                    }
+                }
+            }
         }
         
         if(C instanceof OWLObjectIntersectionOf){
