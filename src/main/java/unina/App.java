@@ -14,6 +14,7 @@ import org.semanticweb.owlapi.model.OWLClassAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLIndividual;
+import org.semanticweb.owlapi.model.OWLObjectComplementOf;
 import org.semanticweb.owlapi.model.OWLObjectIntersectionOf;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLObjectPropertyAssertionAxiom;
@@ -105,6 +106,18 @@ public class App
         
         System.out.println("Tableux : "+ r.reasoning(intersection));
 
+        OWLObjectComplementOf ce = (OWLObjectComplementOf) Person.getObjectComplementOf();
+        System.out.println(ce.getOperand());
+
+        OWLClassExpression ce2 = Person.getObjectComplementOf();
+
+        Node n = new Node(df.getOWLAnonymousIndividual());
+        Set<OWLAxiom> structure = n.getStructure();
+
+        OWLAxiom axiom = df.getOWLClassAssertionAxiom(ce2, df.getOWLAnonymousIndividual());
+        add(structure, axiom);
+        System.out.println(structure.size());
+
   /*  
 
         //OWLEquivalentClassesAxiom student_equiv = df.getOWLEquivalentClassesAxiom(Student, intersections);
@@ -134,7 +147,10 @@ public class App
         }
 */ 
     }
-
-
+    void add(Set<OWLAxiom> l, OWLAxiom a) {
+        l.add(a);
+    }
 }
+
+
 
