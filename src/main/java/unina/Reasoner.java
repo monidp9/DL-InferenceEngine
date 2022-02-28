@@ -30,6 +30,7 @@ public class Reasoner {
     private OWLDataFactory df = OWLManager.getOWLDataFactory();
     private List<OWLAxiom> tbox = null;
     private OWLClassExpression tboxInConcept = null;
+    private List<OWLAxiom> Tu;
     private boolean usingLazyUnfolding = false;
 
     // ----------------------------------------------------------- reasoning ----------------------------------------------------------- //
@@ -43,16 +44,17 @@ public class Reasoner {
         structure.add(df.getOWLClassAssertionAxiom(C, x0));
 
         if(usingLazyUnfolding){
-            Pair<List<OWLAxiom>, List<OWLAxiom>> tboxLazyUnfolding = lazyUnfolding(tbox); //capire se creare un tipo apposito o continuare ad usare Pair
+            Pair<List<OWLAxiom>, List<OWLAxiom>> tboxLazyUnfolding = lazyUnfoldingPartitioning(tbox); 
             List<OWLAxiom> Tg = tboxLazyUnfolding.getValue();
+            List<OWLAxiom> Tu = tboxLazyUnfolding.getKey();
+            this.Tu = Tu;
 
             if(Tg != null && !Tg.isEmpty()){
                 OWLClassExpression translatedTg = fromTBoxToConcept(Tg);
                 System.out.println("\nTg: \n" + translatedTg + "\n");      
                 structure.add(df.getOWLClassAssertionAxiom(translatedTg, x0));
+                
             } 
-
-            // gestire Tu
 
         } else {
             if(tbox != null && !tbox.isEmpty()) {
@@ -384,7 +386,7 @@ public class Reasoner {
         this.usingLazyUnfolding = true;
     }
 
-    private Pair<List<OWLAxiom>, List<OWLAxiom>> lazyUnfolding(List<OWLAxiom> tbox){
+    private Pair<List<OWLAxiom>, List<OWLAxiom>> lazyUnfoldingPartitioning(List<OWLAxiom> tbox){
 
         List<OWLAxiom> Tu = new LinkedList<>();
         List<OWLAxiom> Tg = new LinkedList<>();
@@ -392,13 +394,13 @@ public class Reasoner {
         OWLEquivalentClassesAxiom equivClassAx;
         OWLSubClassOfAxiom subClassAx;
 
-        // while (!tbox.isEmpty()){ // lo togliamo perchè presupponiamo che la tbox sia formata solo da OWLEquivalentClassesAxiom e OWLSubClassOfAxiom
+        // presupponiamo che la tbox sia formata solo da OWLEquivalentClassesAxiom e OWLSubClassOfAxiom
         
         for(OWLAxiom axiom : tbox){ // pesca a caso o un OWLEquivalentClassesAxiom o un OWLSubClassOfAxiom
             if (axiom instanceof OWLEquivalentClassesAxiom){
                 equivClassAx = (OWLEquivalentClassesAxiom) axiom;
 
-                if(isUnfoldableForEquivalent(Tu, equivClassAx)){
+                if(isUnfoldableAddingEquivalentClass(Tu, equivClassAx)){
                     Tu.add(equivClassAx);
                 } else {
                     Tg.add(equivClassAx);
@@ -406,7 +408,7 @@ public class Reasoner {
             } else if (axiom instanceof OWLSubClassOfAxiom){
                 subClassAx = (OWLSubClassOfAxiom) axiom;
 
-                if(isUnfoldableForSubClass(Tu, subClassAx)){
+                if(isUnfoldableAddingSubClass(Tu, subClassAx)){
                     Tu.add(subClassAx);
                 } else {
                     Tg.add(subClassAx);
@@ -417,15 +419,29 @@ public class Reasoner {
         return new Pair<List<OWLAxiom>, List<OWLAxiom>>(Tu, Tg);
     }
 
-    private boolean isUnfoldableForSubClass(List<OWLAxiom> Tu, OWLSubClassOfAxiom subClassAx) {
-        return false;
+    private boolean isUnfoldableAddingSubClass(List<OWLAxiom> Tu, OWLSubClassOfAxiom subClassAx) {
+        OWLClassExpression A = null, C = null;
+        OWLEquivalentClassesAxiom equivClassAx2;
+        List<Boolean> ret = new LinkedList<>();
+        ret.add(true);
+
+        A = subClassAx.getSubClass();
+        C = subClassAx.getSuperClass();
+
+        if(!(A instanceof OWLClass)){
+            if(A instanceof OWLObjectIntersectionOf){
+
+
+            }
+        }
+
+        // A deve essere una OWLCLass, vedere se lo sia priam di applicare la regola 
+        return checkCompatibilityWithGCI(Tu, (OWLClass) A);        
     }
 
-    private boolean isUnfoldableForEquivalent(List<OWLAxiom> Tu, OWLEquivalentClassesAxiom equivClassAx) {
+    private boolean isUnfoldableAddingEquivalentClass(List<OWLAxiom> Tu, OWLEquivalentClassesAxiom equivClassAx) {
 
-        OWLClassExpression A = null,C = null, P = null; //si assume che A sia di tipo OWLClass, C può essere un ER.C ? 
-        OWLSubClassOfAxiom subClassAx;
-        OWLEquivalentClassesAxiom equivClassAx2;
+        OWLClassExpression A = null,C = null; //si assume che A sia di tipo OWLClass, C può essere un ER.C ? 
         List<Boolean> ret = new LinkedList<>();
         ret.add(true);
 
@@ -435,15 +451,26 @@ public class Reasoner {
             break;
         }
 
-        // controlla che il singolo concetto non sia ciclico
-        isCyclicalConcept(Tu, A, C, ret);
+        // controlla che il singolo concetto non sia ciclico, controllare che A sia di tipo OWLClass
+        isCyclicalConcept(Tu, (OWLClass) A, C, ret);
 
         if(!ret.get(0)){
             return false;
         }
 
+        // A deve essere un OWLClass
+        return checkCompatibilityWithGCI(Tu, (OWLClass) A);        
+    }
+
+    private boolean checkCompatibilityWithGCI(List<OWLAxiom> Tu, OWLClass A){
+
+        OWLSubClassOfAxiom subClassAx;
+        OWLEquivalentClassesAxiom equivClassAx;
+        OWLClassExpression P;
+        
+        // controlla che A non compare a sinistra di nessun’altra GCI di Tu
         for(OWLAxiom axiom : Tu){
-            // controlla che A non compare a sinistra di nessun’altra GCI di Tu
+            // controllo inclusioni  (viene forzata Tu ad avere una sola inclusione possibile per non avere ambiguità nell'applicazione delle regole)
             if (axiom instanceof OWLSubClassOfAxiom){
                 subClassAx = (OWLSubClassOfAxiom) axiom;
                 P = subClassAx.getSubClass();
@@ -451,11 +478,11 @@ public class Reasoner {
                     return false;
                 }
             }
-            // controlla che non ci sia già una definizione di A in Tu
+            // controllo equivalenze
             if (axiom instanceof OWLEquivalentClassesAxiom){
-                equivClassAx2 = (OWLEquivalentClassesAxiom) axiom;
+                equivClassAx = (OWLEquivalentClassesAxiom) axiom;
 
-                for(OWLSubClassOfAxiom sca: equivClassAx2.asOWLSubClassOfAxioms()) {
+                for(OWLSubClassOfAxiom sca: equivClassAx.asOWLSubClassOfAxioms()) {
                     P = sca.getSubClass();
                     if (A.equals(P)){
                         return false;
@@ -464,17 +491,15 @@ public class Reasoner {
                 }
             }
         }
-    
-
-        return false;
+        return true;
     }
 
-    private void isCyclicalConcept(List<OWLAxiom> Tu, OWLClassExpression A, OWLClassExpression C, List<Boolean> ret) {
+    private void isCyclicalConcept(List<OWLAxiom> Tu, OWLClass A, OWLClassExpression C, List<Boolean> ret) {
 
         /* verifica che nessun concetto sia definito direttamente 
          * o indirettamente in termini di se stesso.
          * 
-         * PS. non tiene conto delle fake cicle, cioè casi in cui il concetto 
+         * PS. non tiene conto dei fake cicle, cioè casi in cui il concetto 
          *     è sintatticamente ciclico, ma non semanticamente.
          */
 
@@ -525,6 +550,12 @@ public class Reasoner {
                     isCyclicalConcept(Tu, A, avf.getFiller(), ret);
                 }
             });
+        }
+    }
+
+    private void applyLazyUnfoldingRule(){
+        if(this.Tu != null && !Tu.isEmpty()){
+            System.out.println("ok");
         }
     }
 
