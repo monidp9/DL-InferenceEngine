@@ -15,6 +15,7 @@ import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLEquivalentClassesAxiom;
 import org.semanticweb.owlapi.model.OWLIndividual;
 import org.semanticweb.owlapi.model.OWLObjectAllValuesFrom;
+import org.semanticweb.owlapi.model.OWLObjectComplementOf;
 import org.semanticweb.owlapi.model.OWLObjectIntersectionOf;
 import org.semanticweb.owlapi.model.OWLObjectPropertyAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLObjectPropertyDomainAxiom;
@@ -78,33 +79,32 @@ public class Reasoner {
         Node newNode = null;
 
         Set<OWLAxiom> structure = node.getStructure();
-        Set<OWLAxiom> structureTmp = new TreeSet<>(structure);
+        Set<OWLAxiom> structureTmp;
 
         OWLClassExpression classExpression = null;
-        OWLIndividual x1 = null, individual = null;
+        OWLIndividual individual = null;
 
         // applica AND esaustivamente 
         do{    
             isAppliedRule = false;
-            for (OWLAxiom axiom : structure){
+            structureTmp = new TreeSet<OWLAxiom>(structure);
+
+            for (OWLAxiom axiom : structureTmp){
                 if (axiom instanceof OWLClassAssertionAxiom){ 
                     classExpression = ((OWLClassAssertionAxiom) axiom).getClassExpression();
 
                     if(classExpression instanceof OWLObjectIntersectionOf){
                         individual = ((OWLClassAssertionAxiom) axiom).getIndividual();
-                        if(handleIntersectionOf(classExpression, individual, node, structureTmp)){
+                        if(handleIntersectionOf(classExpression, individual, node)){
                             isAppliedRule = true;
                         }
                     } 
                 }
             }
-            node.setStructure(new TreeSet<OWLAxiom>(structureTmp)); 
-            structure = node.getStructure();
-
-        }while (isAppliedRule);  
+        } while (isAppliedRule);  
 
         // applica OR esaustivamente 
-        for (OWLAxiom axiom : structure){
+        for (OWLAxiom axiom : structure) {
             if (axiom instanceof OWLClassAssertionAxiom){ 
                 classExpression = ((OWLClassAssertionAxiom) axiom).getClassExpression();
 
@@ -145,31 +145,45 @@ public class Reasoner {
             }
         }
 
+        // applica regole di LAZY UNFOLDING
+        do {
+            isAppliedRule = false;
+            structureTmp = new TreeSet<OWLAxiom>(structure);
+
+            for(OWLAxiom axiom: structureTmp) {
+                if(axiom instanceof OWLClassAssertionAxiom) {
+                    if(applyLazyUnfoldingRule((OWLClassAssertionAxiom) axiom, node)) {
+                        isAppliedRule = true;
+                    }
+                }
+            }
+        } while(isAppliedRule);
+
         // applica ESISTENZIALE
-        if(isClashFree(structure)){   
-            for (OWLAxiom axiom : structure){
-                if (axiom instanceof OWLClassAssertionAxiom){ 
-                    classExpression = ((OWLClassAssertionAxiom) axiom).getClassExpression();
+        if(isClashFree(structure)) { 
+            structureTmp = new TreeSet<OWLAxiom>(structure);
+
+            for (OWLAxiom firstAxiom : structureTmp) {
+                if (firstAxiom instanceof OWLClassAssertionAxiom) { 
+                    classExpression = ((OWLClassAssertionAxiom) firstAxiom).getClassExpression();
     
                     if (classExpression instanceof OWLObjectSomeValuesFrom) {
-                        x1 = df.getOWLAnonymousIndividual();
-                        newNode = new Node(x1); //non è detto che viene utilizzato, anzi se non va a buon fine l'applicazione della regola è creato invano
+                        newNode = new Node(df.getOWLAnonymousIndividual()); //non è detto che viene utilizzato, anzi se non va a buon fine l'applicazione della regola è creato invano
                         newNode.setStructure(new TreeSet<OWLAxiom>(structure)); // il nuovo nodo porta con se i concetti del padre
 
-                        individual = ((OWLClassAssertionAxiom) axiom).getIndividual();
-                        structureTmp = new TreeSet<OWLAxiom>(structure); //si lavora con una struttura d'appoggio perche il ruolo non puo essere inserito sulla struttura sulla quale si itera
+                        individual = ((OWLClassAssertionAxiom) firstAxiom).getIndividual();
                         // structureTmp non servirebbe in quanto basterebbe indicare a "handleAllValuesFrom" semplicemente qual è la proprietà da tenere in considerazione
-                        isAppliedRule = handleSomeValuesFrom(classExpression, individual, node, newNode, structureTmp);
+                        isAppliedRule = handleSomeValuesFrom(classExpression, individual, node, newNode);
                     }
                 }
 
                 if (isAppliedRule){
                     // applica UNIVERSALE esaustivamente
-                    for (OWLAxiom axiom2 : structure) {
-                        if (axiom2 instanceof OWLClassAssertionAxiom){ 
-                            classExpression = ((OWLClassAssertionAxiom) axiom2).getClassExpression();
+                    for (OWLAxiom secondAxiom : structureTmp) {
+                        if (secondAxiom instanceof OWLClassAssertionAxiom){ 
+                            classExpression = ((OWLClassAssertionAxiom) secondAxiom).getClassExpression();
                             if (classExpression instanceof OWLObjectAllValuesFrom){
-                                handleAllValuesFrom(classExpression, individual, node, newNode, structureTmp);
+                                handleAllValuesFrom(classExpression, individual, node, newNode);
                             }
                         }
                     }
@@ -193,9 +207,9 @@ public class Reasoner {
         return true;
     } 
 
-    private boolean handleAllValuesFrom(OWLClassExpression classExpression, OWLIndividual individual, Node node, Node newNode, Set<OWLAxiom> structureTmp){
+    private boolean handleAllValuesFrom(OWLClassExpression classExpression, OWLIndividual individual, Node node, Node newNode) {
         if(individual.equals(node.getIndividual())) {
-            int strSize = newNode.getStructure().size();
+            int oldSize = newNode.getStructure().size();
 
             classExpression.accept(new OWLClassExpressionVisitor() {
                 @Override
@@ -204,22 +218,22 @@ public class Reasoner {
                     OWLObjectPropertyExpression property = avf.getProperty();
 
                     OWLObjectPropertyAssertionAxiom propAssertion = df.getOWLObjectPropertyAssertionAxiom(property, node.getIndividual(), newNode.getIndividual());
+                    
+                    Set<OWLAxiom> structure = node.getStructure();
                     Set<OWLAxiom> newStructure = newNode.getStructure();
                     
-                    if (structureTmp.contains(propAssertion)){
+                    if (structure.contains(propAssertion)) {
                         OWLClassAssertionAxiom classAssertion = df.getOWLClassAssertionAxiom(filler, newNode.getIndividual());
-                        if(!newStructure.contains(classAssertion)){ //inutile, essendo un set non verrebbe aggiunto se già ci fosse
-                            newStructure.add(classAssertion);
-                        }
+                        newStructure.add(classAssertion); // essendo un set non viene aggiunto se già presente
                     }
                 }
             });
-            return strSize < newNode.getStructure().size();
+            return oldSize < newNode.getStructure().size();
         }
         return false;
     }
 
-    private boolean handleSomeValuesFrom(OWLClassExpression classExpression, OWLIndividual individual, Node node, Node newNode, Set<OWLAxiom> structureTmp) {
+    private boolean handleSomeValuesFrom(OWLClassExpression classExpression, OWLIndividual individual, Node node, Node newNode) {
         if(individual.equals(node.getIndividual())) {
             int strSize = newNode.getStructure().size();
             classExpression.accept(new OWLClassExpressionVisitor() {
@@ -228,12 +242,13 @@ public class Reasoner {
                     OWLClassExpression filler = svf.getFiller();
                     OWLObjectPropertyExpression property = svf.getProperty();
 
+                    Set<OWLAxiom> structure = node.getStructure();
                     Set<OWLAxiom> newStructure = newNode.getStructure();
 
                     OWLObjectPropertyAssertionAxiom propAssertion = df.getOWLObjectPropertyAssertionAxiom(property, node.getIndividual(), newNode.getIndividual());
                     OWLClassAssertionAxiom classAssertion = df.getOWLClassAssertionAxiom(filler, newNode.getIndividual());
 
-                    structureTmp.add(propAssertion);
+                    structure.add(propAssertion);
                     newStructure.add(propAssertion);
                     newStructure.add(classAssertion);
 
@@ -252,17 +267,20 @@ public class Reasoner {
         return false;
     }
 
-    private boolean handleIntersectionOf(OWLClassExpression classExpression, OWLIndividual individual, Node node, Set<OWLAxiom> structure) {
-        if(individual.equals(node.getIndividual())) {
+    private boolean handleIntersectionOf(OWLClassExpression classExpression, OWLIndividual individual, Node node) {
+        OWLIndividual currIndividual = node.getIndividual();
+        Set<OWLAxiom> structure = node.getStructure();
+
+        if(individual.equals(currIndividual)) {
             int strSize = structure.size();
             classExpression.accept(new OWLClassExpressionVisitor() {
                 @Override
                 public void visit(OWLObjectIntersectionOf oi) {
                     for (OWLClassExpression ce : oi.getOperandsAsList()) {
-                        OWLClassAssertionAxiom axiom = df.getOWLClassAssertionAxiom(ce, node.getIndividual());
+                        OWLClassAssertionAxiom classAssertion = df.getOWLClassAssertionAxiom(ce, currIndividual);
 
-                        if (!structure.contains(axiom)) {  
-                            structure.add(axiom);
+                        if (!structure.contains(classAssertion)) {  
+                            structure.add(classAssertion);
                         }
                     }
                 }
@@ -273,13 +291,12 @@ public class Reasoner {
     }
 
     private boolean handleUnionOf(OWLClassExpression classExpression, OWLIndividual individual, Node node, Node newNode) { 
-
         if(individual.equals(node.getIndividual())) {
             classExpression.accept(new OWLClassExpressionVisitor() {
                 @Override
                 public void visit(OWLObjectUnionOf ou) {
                     boolean flag = false;
-                    OWLClassAssertionAxiom axiom;
+                    OWLClassAssertionAxiom classAssertion;
 
                     OWLClassExpression secondDisj = ou.getOperandsAsList().get(1);
                     OWLClassAssertionAxiom secondDisjAx = df.getOWLClassAssertionAxiom(secondDisj, newNode.getIndividual());
@@ -288,17 +305,16 @@ public class Reasoner {
                     flag = false;
 
                     for (OWLClassExpression disjunct : ou.getOperandsAsList()) {
-
                         Set<OWLAxiom> newStructure = newNode.getStructure();
-                        axiom = df.getOWLClassAssertionAxiom(disjunct, newNode.getIndividual());
+                        classAssertion = df.getOWLClassAssertionAxiom(disjunct, newNode.getIndividual());
 
-                        if (!newStructure.contains(axiom)){ 
+                        if (!newStructure.contains(classAssertion)){ 
                             /*
                                 La seconda condizione serve quando ripassando su una formula (P or B) e provenendo
                                 da B già selezionato, P non deve essere messo nella struttura.
                             */
                             if ((node.getSxPtr() == null || flag) && !newStructure.contains(secondDisjAx)){
-                                newStructure.add(axiom);
+                                newStructure.add(classAssertion);
                                 break;
                             } else {
                                 flag = true;
@@ -321,11 +337,11 @@ public class Reasoner {
         OWLIndividual x, y;
 
         for (OWLAxiom axiom: structure){
-            if (axiom instanceof OWLClassAssertionAxiom){ 
+            if (axiom instanceof OWLClassAssertionAxiom) { 
                 classAssertion = (OWLClassAssertionAxiom) axiom;
                 classExpression = classAssertion.getClassExpression();
 
-                if(classExpression instanceof OWLClass){
+                if(classExpression instanceof OWLClass) {
                     if(classExpression.isOWLNothing()) {
                         return false;
                     }
@@ -621,6 +637,68 @@ public class Reasoner {
             });
         }
     }
+
+    private boolean applyLazyUnfoldingRule(OWLClassAssertionAxiom classAssertion, Node node){
+        if(Tu != null && !Tu.isEmpty()) {
+            OWLClassExpression firstClass = null, secondClass = null;
+            OWLClassExpression ce = classAssertion.getClassExpression();
+            
+            OWLObjectComplementOf complement = null;
+
+            OWLIndividual x, y;
+            y = classAssertion.getIndividual();
+            x = node.getIndividual();
+
+            OWLEquivalentClassesAxiom equivAx;
+            OWLSubClassOfAxiom subClassAx;
+            OWLClassAssertionAxiom newClassAssertion;
+
+            Set<OWLAxiom> structure = node.getStructure();
+            int oldSize = structure.size();
+
+            if(x.equals(y)) {
+                if(ce instanceof OWLObjectComplementOf) {
+                    // è del tipo not A
+                    complement = (OWLObjectComplementOf) ce;
+                    ce = complement.getOperand();
+                }
+
+                if(ce instanceof OWLClass) {
+
+                    for(OWLAxiom axiom: Tu) {
+                        if(axiom instanceof OWLEquivalentClassesAxiom) {
+                            equivAx = (OWLEquivalentClassesAxiom) axiom;
+                            List<OWLClassExpression> l = equivAx.classExpressions().collect(Collectors.toList());
+                            firstClass = l.get(0);
+                            secondClass = l.get(1);
+
+                            if(firstClass.equals(ce)) {
+                                secondClass = secondClass.getNNF();
+                                newClassAssertion = df.getOWLClassAssertionAxiom(secondClass, x);
+                                structure.add(newClassAssertion);
+                                break;
+                            }
+
+                        } else if(axiom instanceof OWLSubClassOfAxiom) {
+                            subClassAx = (OWLSubClassOfAxiom) axiom;
+                            firstClass = subClassAx.getSubClass();
+                            secondClass = subClassAx.getSuperClass();
+
+                            if(firstClass.equals(ce)) {
+                                secondClass = secondClass.getNNF();
+                                newClassAssertion = df.getOWLClassAssertionAxiom(secondClass, x);
+                                structure.add(newClassAssertion);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            return oldSize < structure.size();
+        }
+        return false;
+    }
+
 
     // ----------------------------------------------------------- tbox management ----------------------------------------------------------- //
 
