@@ -63,7 +63,7 @@ public class Reasoner {
             }
         }
         
-        return  dfs(node);
+        return dfs(node);
     }
 
     private boolean dfs(Node node){ //ragionare sull eliminazione dei puntatori e dei nodi 
@@ -236,7 +236,7 @@ public class Reasoner {
 
                     newNode.setParent(node);
 
-                    if(tbox != null) {
+                    if(tboxInConcept != null) {
                         // la regola dell'esistenziale è stata applicata e la tbox è vuota: la si aggiunge nel nuovo individuo
                         OWLClassAssertionAxiom tboxAss = df.getOWLClassAssertionAxiom(tboxInConcept, newNode.getIndividual());
                         newStructure.add(tboxAss);
@@ -348,7 +348,7 @@ public class Reasoner {
     }
 
     private void setIfBlocked(Node node) {
-        if(tbox != null) {
+        if(tboxInConcept != null) {
             Node parentNode = node.getParent();
             Set<OWLAxiom> parentStructure = parentNode.getStructure();
             Set<OWLAxiom> structure = node.getStructure();
