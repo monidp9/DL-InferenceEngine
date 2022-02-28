@@ -688,7 +688,7 @@ public class Reasoner {
                     }
 
                 } else if(ce instanceof OWLObjectComplementOf) {
-                    
+
                     complement = (OWLObjectComplementOf) ce;
                     ce = complement.getOperand();
 
@@ -713,7 +713,6 @@ public class Reasoner {
         }
         return false;
     }
-
 
     // ----------------------------------------------------------- tbox management ----------------------------------------------------------- //
 
