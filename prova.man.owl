@@ -3,32 +3,22 @@ Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 Prefix: xml: <http://www.w3.org/XML/1998/namespace>
 Prefix: xsd: <http://www.w3.org/2001/XMLSchema#>
-Prefix: t: <http://owl.api.tutorial#>
 
 
 
 Ontology: <http://owl.api.tutorial>
 
 
-ObjectProperty: t:eats
+Class: <http://owl.api.tutorial#Course>
 
-    Domain: 
-       t:Person
-    
-    Range: 
-        t:Food
+    EquivalentTo: 
+        <http://owl.api.tutorial#Person>
+         and <http://owl.api.tutorial#University>
     
     
-Class: t:Food
+Class: <http://owl.api.tutorial#Person>
 
     
-Class: t:Meat
+Class: <http://owl.api.tutorial#University>
 
-    SubClassOf: 
-        t:Food
     
-    
-Class: t:Person
-
-    SubClassOf: 
-        not (t:Food)

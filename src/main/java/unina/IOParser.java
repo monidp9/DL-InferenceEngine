@@ -316,6 +316,7 @@ public class IOParser extends JDialog implements ActionListener{
         reasoner.setTbox(tbox);
         
         System.out.println("\nTABLEAUX : "+reasoner.reasoning(concept));
+    
         System.exit(0);
     }
 }

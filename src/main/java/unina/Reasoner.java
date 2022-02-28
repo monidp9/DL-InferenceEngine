@@ -657,12 +657,6 @@ public class Reasoner {
             int oldSize = structure.size();
 
             if(x.equals(y)) {
-                if(ce instanceof OWLObjectComplementOf) {
-                    // è del tipo not A
-                    complement = (OWLObjectComplementOf) ce;
-                    ce = complement.getOperand();
-                }
-
                 if(ce instanceof OWLClass) {
 
                     for(OWLAxiom axiom: Tu) {
@@ -692,6 +686,27 @@ public class Reasoner {
                             }
                         }
                     }
+
+                } else if(ce instanceof OWLObjectComplementOf) {
+                    
+                    complement = (OWLObjectComplementOf) ce;
+                    ce = complement.getOperand();
+
+                    for(OWLAxiom axiom: Tu) {
+                        if(axiom instanceof OWLSubClassOfAxiom) {
+                            subClassAx = (OWLSubClassOfAxiom) axiom;
+                            firstClass = subClassAx.getSubClass();
+                            secondClass = subClassAx.getSuperClass();
+
+                            if(firstClass.equals(ce)) {
+                                secondClass = secondClass.getComplementNNF();
+                                newClassAssertion = df.getOWLClassAssertionAxiom(secondClass, x);
+                                structure.add(newClassAssertion);
+                                break;
+                            }
+                        }
+                    }
+                    
                 }
             }
             return oldSize < structure.size();
@@ -701,7 +716,6 @@ public class Reasoner {
 
 
     // ----------------------------------------------------------- tbox management ----------------------------------------------------------- //
-
 
     public void setTbox(List<OWLAxiom> tbox){
         this.tbox = tbox;
