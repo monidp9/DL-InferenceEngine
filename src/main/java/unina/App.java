@@ -102,7 +102,6 @@ public class App
         OWLObjectPropertyAssertionAxiom p = df.getOWLObjectPropertyAssertionAxiom(attends, x, y);
 
         aboxes.add(p);
-
         
         System.out.println("Tableux : "+ r.reasoning(intersection));
 

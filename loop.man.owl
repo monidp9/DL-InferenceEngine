@@ -12,6 +12,9 @@ Ontology: <http://owl.api.tutorial>
 
 Class: t:Animal
 
+    SubClassOf:
+        not t:Person
+
 
 Class: t:Person
 
@@ -25,7 +28,7 @@ ObjectProperty: t:eats
        t:Person
     
     Range: 
-        t:Person
+       t:Person
 
 
 ObjectProperty: t:loves

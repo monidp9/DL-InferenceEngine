@@ -101,7 +101,7 @@ public class Reasoner {
         }while (isAppliedRule);  
 
         // applica OR esaustivamente 
-        for (OWLAxiom axiom : structure){
+        for (OWLAxiom axiom : structure) {
             if (axiom instanceof OWLClassAssertionAxiom){ 
                 classExpression = ((OWLClassAssertionAxiom) axiom).getClassExpression();
 
@@ -143,7 +143,7 @@ public class Reasoner {
         }
 
         // applica ESISTENZIALE
-        if(isClashFree(structure)){   
+        if(isClashFree(structure)) {   
             for (OWLAxiom axiom : structure){
                 if (axiom instanceof OWLClassAssertionAxiom){ 
                     classExpression = ((OWLClassAssertionAxiom) axiom).getClassExpression();
@@ -318,11 +318,11 @@ public class Reasoner {
         OWLIndividual x, y;
 
         for (OWLAxiom axiom: structure){
-            if (axiom instanceof OWLClassAssertionAxiom){ 
+            if (axiom instanceof OWLClassAssertionAxiom) { 
                 classAssertion = (OWLClassAssertionAxiom) axiom;
                 classExpression = classAssertion.getClassExpression();
 
-                if(classExpression instanceof OWLClass){
+                if(classExpression instanceof OWLClass) {
                     if(classExpression.isOWLNothing()) {
                         return false;
                     }
