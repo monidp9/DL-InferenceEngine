@@ -312,7 +312,7 @@ public class IOParser extends JDialog implements ActionListener{
         System.out.println("\n ------ TRANSLATED ------");
         System.out.println("\nCONCEPT: \n" + concept + "\n");
 
-        // reasoner.activeLazyUnfolding();
+        reasoner.activeLazyUnfolding();
         reasoner.setTbox(tbox);
         
         System.out.println("\nTABLEAUX : "+reasoner.reasoning(concept));
