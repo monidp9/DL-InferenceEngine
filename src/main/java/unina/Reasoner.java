@@ -1,9 +1,7 @@
 package unina;
 
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Stream;
+import javafx.util.Pair;
 import java.util.*;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
@@ -24,8 +22,6 @@ import org.semanticweb.owlapi.model.OWLObjectPropertyRangeAxiom;
 import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
 import org.semanticweb.owlapi.model.OWLObjectUnionOf;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
-
-import javafx.util.Pair;
 
 
 public class Reasoner {
@@ -353,7 +349,7 @@ public class Reasoner {
 
         // while (!tbox.isEmpty()){ // lo togliamo perchè presupponiamo che la tbox sia formata solo da OWLEquivalentClassesAxiom e OWLSubClassOfAxiom
         
-        for(OWLAxiom axiom : tbox){
+        for(OWLAxiom axiom : tbox){ // pesca a caso o un OWLEquivalentClassesAxiom o un OWLSubClassOfAxiom
             if (axiom instanceof OWLEquivalentClassesAxiom){
                 equivClassAx = (OWLEquivalentClassesAxiom) axiom;
 
@@ -362,11 +358,7 @@ public class Reasoner {
                 } else {
                     Tg.add(equivClassAx);
                 } 
-            }
-        }
-
-        for(OWLAxiom axiom : tbox){
-            if (axiom instanceof OWLSubClassOfAxiom){
+            } else if (axiom instanceof OWLSubClassOfAxiom){
                 subClassAx = (OWLSubClassOfAxiom) axiom;
 
                 if(isUnfoldableForSubClass(Tu, subClassAx)){
@@ -386,36 +378,109 @@ public class Reasoner {
 
     private boolean isUnfoldableForEquivalent(List<OWLAxiom> Tu, OWLEquivalentClassesAxiom equivClassAx) {
 
-        OWLClassExpression A,C = null;
+        OWLClassExpression A = null,C = null, P = null; //si assume che A sia di tipo OWLClass, C può essere un ER.C ? 
+        OWLSubClassOfAxiom subClassAx;
+        OWLEquivalentClassesAxiom equivClassAx2;
+        List<Boolean> ret = new LinkedList<>();
+        ret.add(true);
 
         for(OWLSubClassOfAxiom sca: equivClassAx.asOWLSubClassOfAxioms()) {
             A = sca.getSubClass();
             C = sca.getSuperClass();
+            break;
+        }
 
-            if(isCyclicalConcept(Tu,A,C)){
-                return false;
+        // controlla che il singolo concetto non sia ciclico
+        isCyclicalConcept(Tu, A, C, ret);
+
+        if(!ret.get(0)){
+            return false;
+        }
+
+        for(OWLAxiom axiom : Tu){
+            // controlla che A non compare a sinistra di nessun’altra GCI di Tu
+            if (axiom instanceof OWLSubClassOfAxiom){
+                subClassAx = (OWLSubClassOfAxiom) axiom;
+                P = subClassAx.getSubClass();
+                if(A.equals(P)){  // bisogna valutare anche il complemento ??
+                    return false;
+                }
+            }
+            // controlla che non ci sia già una definizione di A in Tu
+            if (axiom instanceof OWLEquivalentClassesAxiom){
+                equivClassAx2 = (OWLEquivalentClassesAxiom) axiom;
+
+                for(OWLSubClassOfAxiom sca: equivClassAx2.asOWLSubClassOfAxioms()) {
+                    P = sca.getSubClass();
+                    if (A.equals(P)){
+                        return false;
+                    }
+                    break;
+                }
             }
         }
+    
 
         return false;
     }
 
-    private boolean isCyclicalConcept(List<OWLAxiom> Tu, OWLClassExpression A, OWLClassExpression C) {
+    private void isCyclicalConcept(List<OWLAxiom> Tu, OWLClassExpression A, OWLClassExpression C, List<Boolean> ret) {
+
+        /* verifica che nessun concetto sia definito direttamente 
+         * o indirettamente in termini di se stesso.
+         * 
+         * PS. non tiene conto delle fake cicle, cioè casi in cui il concetto 
+         *     è sintatticamente ciclico, ma non semanticamente.
+         */
+
+        if(C instanceof OWLClass){
+            if (C.equals(A)){ //vale anche se c'è il complemento ???
+                ret.set(0, false);
+            } 
+        }
         
         if(C instanceof OWLObjectIntersectionOf){
-
+            C.accept(new OWLClassExpressionVisitor() {
+                @Override
+                public void visit(OWLObjectIntersectionOf oi) {
+                    for (OWLClassExpression ce : oi.getOperandsAsList()) {
+                        isCyclicalConcept(Tu, A, ce, ret);
+                        if(!ret.get(0)){
+                            break;
+                        }
+                    }
+                }
+            });
         }
         if(C instanceof OWLObjectUnionOf){
-
+            C.accept(new OWLClassExpressionVisitor() {
+                @Override
+                public void visit(OWLObjectUnionOf ou) {
+                    for (OWLClassExpression ce : ou.getOperandsAsList()) {
+                        isCyclicalConcept(Tu, A, ce, ret);
+                        if(!ret.get(0)){
+                            break;
+                        }
+                    }
+                }
+            });
         }
         if(C instanceof OWLObjectSomeValuesFrom){
-
+            C.accept(new OWLClassExpressionVisitor() {
+                @Override
+                public void visit(OWLObjectSomeValuesFrom svf) {
+                    isCyclicalConcept(Tu, A, svf.getFiller(), ret);
+                }
+            });
         }
         if(C instanceof OWLObjectAllValuesFrom){
-
+            C.accept(new OWLClassExpressionVisitor() {
+                @Override
+                public void visit(OWLObjectAllValuesFrom avf) {
+                    isCyclicalConcept(Tu, A, avf.getFiller(), ret);
+                }
+            });
         }
-
-        return false;
     }
 
     // ----------------------------------------------------------- tbox management ----------------------------------------------------------- //
