@@ -1,5 +1,6 @@
 package unina;
 
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javafx.util.Pair;
 import java.util.*;
@@ -392,7 +393,7 @@ public class Reasoner {
         List<OWLAxiom> Tg = new LinkedList<>();
 
         OWLEquivalentClassesAxiom equivClassAx;
-        OWLSubClassOfAxiom subClassAx;
+        OWLSubClassOfAxiom subClassAx, modifiedSubClassAx;
 
         // presupponiamo che la tbox sia formata solo da OWLEquivalentClassesAxiom e OWLSubClassOfAxiom
         
@@ -409,7 +410,12 @@ public class Reasoner {
                 subClassAx = (OWLSubClassOfAxiom) axiom;
 
                 if(isUnfoldableAddingSubClass(Tu, subClassAx)){
-                    Tu.add(subClassAx);
+                    if(subClassAx instanceof OWLObjectIntersectionOf){
+                        modifiedSubClassAx = transformSubClassAx(subClassAx);
+                        Tu.add(modifiedSubClassAx);
+                    } else {
+                        Tu.add(subClassAx);
+                    }
                 } else {
                     Tg.add(subClassAx);
                 } 
@@ -419,47 +425,110 @@ public class Reasoner {
         return new Pair<List<OWLAxiom>, List<OWLAxiom>>(Tu, Tg);
     }
 
+    private OWLSubClassOfAxiom transformSubClassAx(OWLSubClassOfAxiom subClassAx){
+
+        /*  
+         *  il metodo trasforma l'assioma di inclusione in modo tale che
+         *  nel LHS sia presente solo un concetto atomico. La verifica
+         *  che ci siano le condizioni per farlo viene fatta nel metodo
+         *  'isUnfoldableAddingSubClass'
+         */
+        
+        OWLClassExpression A = subClassAx.getSubClass();
+        OWLClassExpression C = subClassAx.getSuperClass();
+
+        List<OWLSubClassOfAxiom> ret = new LinkedList<>();
+
+        A.accept(new OWLClassExpressionVisitor() {
+            @Override
+            public void visit(OWLObjectIntersectionOf oi) {
+                Set<OWLClassExpression> conjunctSet =  oi.asConjunctSet();
+                OWLClassExpression superClass, operand = null, newA = null;;
+                OWLSubClassOfAxiom newSubClassAx = null;
+
+                for (OWLClassExpression ce : conjunctSet){
+                    if (ce instanceof OWLClass){
+                        newA = ce; 
+                        break;
+                    }
+                }
+                if(newA != null){ //lo sarà sempre
+                    conjunctSet.remove(newA);
+                    operand = df.getOWLObjectIntersectionOf(conjunctSet);  
+                    operand = operand.getComplementNNF();
+                    superClass = df.getOWLObjectUnionOf(Stream.of(operand, C));
+                    newSubClassAx = df.getOWLSubClassOfAxiom(newA, superClass);
+
+                    ret.add(newSubClassAx);
+                }
+            }
+        });
+        return ret.get(0);
+    }
+
     private boolean isUnfoldableAddingSubClass(List<OWLAxiom> Tu, OWLSubClassOfAxiom subClassAx) {
-        OWLClassExpression A = null, C = null;
-        OWLEquivalentClassesAxiom equivClassAx2;
+        
+        OWLClassExpression A = null;
         List<Boolean> ret = new LinkedList<>();
-        ret.add(true);
-
+        ret.add(false);
         A = subClassAx.getSubClass();
-        C = subClassAx.getSuperClass();
-
-        if(!(A instanceof OWLClass)){
-            if(A instanceof OWLObjectIntersectionOf){
 
 
+        /* 
+         * verifica che A sia un concetto atomico oppure del tipo A ∩ C (con C concetto complesso) 
+         * trasformando l'inclusione in modo da avere il LHS formato da un solo concetto atomico A
+         * e spostando a destra i restanti congiunti C
+        */
+        if(A instanceof OWLClass){
+            return checkCompatibilityWithGCI(Tu, (OWLClass) A);    
+
+        } else if(A instanceof OWLObjectIntersectionOf){
+            A.accept(new OWLClassExpressionVisitor() {
+                @Override
+                public void visit(OWLObjectIntersectionOf oi) {
+                    Set<OWLClassExpression> conjunctSet =  oi.asConjunctSet(); 
+                    for (OWLClassExpression ce : conjunctSet){
+                        if (ce instanceof OWLClass){
+                            ret.set(0, true);
+                        }
+                    }
+                }  
+            });
+            if(ret.get(0)){
+                return true;
             }
         }
-
-        // A deve essere una OWLCLass, vedere se lo sia priam di applicare la regola 
-        return checkCompatibilityWithGCI(Tu, (OWLClass) A);        
+        return false;
     }
 
     private boolean isUnfoldableAddingEquivalentClass(List<OWLAxiom> Tu, OWLEquivalentClassesAxiom equivClassAx) {
 
-        OWLClassExpression A = null,C = null; //si assume che A sia di tipo OWLClass, C può essere un ER.C ? 
+        /* 
+         * il metodo si aspetta che il LHS di un EquoivalentClassesAxiom sia un concetto atomico 
+         * il caso contrario, l'assioma non viene considerato
+         */
+
+
+        List<OWLClassExpression> equivParts = equivClassAx.classExpressions().collect(Collectors.toList());
+        OWLClassExpression A = equivParts.get(0); // si assume che A sia di tipo OWLClass
+        OWLClassExpression C = equivParts.get(1); // C può essere un ER.C ? 
+        
         List<Boolean> ret = new LinkedList<>();
         ret.add(true);
 
-        for(OWLSubClassOfAxiom sca: equivClassAx.asOWLSubClassOfAxioms()) {
-            A = sca.getSubClass();
-            C = sca.getSuperClass();
-            break;
-        }
 
-        // controlla che il singolo concetto non sia ciclico, controllare che A sia di tipo OWLClass
-        isCyclicalConcept(Tu, (OWLClass) A, C, ret);
+        if (A instanceof OWLClass){
+            // controlla che l'assioma non sia ciclico
+            isCyclicalConcept(Tu, (OWLClass) A, C, ret);
 
-        if(!ret.get(0)){
+            if(!ret.get(0)){
+                return false;
+            }
+            return checkCompatibilityWithGCI(Tu, (OWLClass) A);  
+
+        } else {
             return false;
-        }
-
-        // A deve essere un OWLClass
-        return checkCompatibilityWithGCI(Tu, (OWLClass) A);        
+        }      
     }
 
     private boolean checkCompatibilityWithGCI(List<OWLAxiom> Tu, OWLClass A){
@@ -468,9 +537,9 @@ public class Reasoner {
         OWLEquivalentClassesAxiom equivClassAx;
         OWLClassExpression P;
         
-        // controlla che A non compare a sinistra di nessun’altra GCI di Tu
+        // controlla che A non compaia a sinistra di nessun’altra GCI di Tu
         for(OWLAxiom axiom : Tu){
-            // controllo inclusioni  (viene forzata Tu ad avere una sola inclusione possibile per non avere ambiguità nell'applicazione delle regole)
+            // controllo inclusioni  (Tu viene forzato ad avere una sola inclusione possibile per non avere ambiguità nell'applicazione delle regole)
             if (axiom instanceof OWLSubClassOfAxiom){
                 subClassAx = (OWLSubClassOfAxiom) axiom;
                 P = subClassAx.getSubClass();
@@ -482,12 +551,11 @@ public class Reasoner {
             if (axiom instanceof OWLEquivalentClassesAxiom){
                 equivClassAx = (OWLEquivalentClassesAxiom) axiom;
 
-                for(OWLSubClassOfAxiom sca: equivClassAx.asOWLSubClassOfAxioms()) {
-                    P = sca.getSubClass();
-                    if (A.equals(P)){
-                        return false;
-                    }
-                    break;
+                List<OWLClassExpression> equivParts = equivClassAx.classExpressions().collect(Collectors.toList());
+                P = equivParts.get(0); 
+
+                if (A.equals(P)){
+                    return false;
                 }
             }
         }
@@ -496,7 +564,8 @@ public class Reasoner {
 
     private void isCyclicalConcept(List<OWLAxiom> Tu, OWLClass A, OWLClassExpression C, List<Boolean> ret) {
 
-        /* verifica che nessun concetto sia definito direttamente 
+        /* 
+         * verifica che nessun concetto sia definito direttamente 
          * o indirettamente in termini di se stesso.
          * 
          * PS. non tiene conto dei fake cicle, cioè casi in cui il concetto 
@@ -552,13 +621,6 @@ public class Reasoner {
             });
         }
     }
-
-    private void applyLazyUnfoldingRule(){
-        if(this.Tu != null && !Tu.isEmpty()){
-            System.out.println("ok");
-        }
-    }
-
 
     // ----------------------------------------------------------- tbox management ----------------------------------------------------------- //
 
