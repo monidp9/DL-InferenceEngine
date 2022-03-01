@@ -313,7 +313,6 @@ public class Reasoner {
         return false;
     }
 
-    // VERA FUNZIONE
     private boolean isClashFree(Set<OWLAxiom> structure) {
 
         /*
