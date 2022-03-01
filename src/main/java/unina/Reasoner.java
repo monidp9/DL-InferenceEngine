@@ -332,13 +332,18 @@ public class Reasoner {
     }
 
     private boolean isClashFree(Set<OWLAxiom> structure) {
+
+        /*
+         * Verifica la presenza di clash su concetti atomici. 
+         */
+
         OWLClassExpression complementClassExpression, classExpression;
         OWLClassAssertionAxiom classAssertion;
         OWLIndividual x, y;
 
-        for (OWLAxiom axiom: structure){
-            if (axiom instanceof OWLClassAssertionAxiom) { 
-                classAssertion = (OWLClassAssertionAxiom) axiom;
+        for (OWLAxiom firstAxiom: structure){
+            if (firstAxiom instanceof OWLClassAssertionAxiom) { 
+                classAssertion = (OWLClassAssertionAxiom) firstAxiom;
                 classExpression = classAssertion.getClassExpression();
 
                 if(classExpression instanceof OWLClass) {
@@ -349,11 +354,11 @@ public class Reasoner {
                     x = classAssertion.getIndividual();
                     complementClassExpression = classExpression.getObjectComplementOf();
 
-                    for(OWLAxiom axiom2: structure){
-                        if (axiom2 instanceof OWLClassAssertionAxiom) { 
-                            y = ((OWLClassAssertionAxiom) axiom2).getIndividual();
+                    for(OWLAxiom secondAxiom: structure){
+                        if (secondAxiom instanceof OWLClassAssertionAxiom) { 
+                            y = ((OWLClassAssertionAxiom) secondAxiom).getIndividual();
                             if(y.equals(x)) {
-                                classExpression = ((OWLClassAssertionAxiom) axiom2).getClassExpression();
+                                classExpression = ((OWLClassAssertionAxiom) secondAxiom).getClassExpression();
                                 if(classExpression.equals(complementClassExpression)){
                                     return false;
                                 }
@@ -367,6 +372,12 @@ public class Reasoner {
     }
 
     private void setIfBlocked(Node node) {
+
+        /*
+         * Imposta il blocking di un nodo qualora la sua struttura fosse 
+         * contenuta in quella del padre. 
+         */
+
         if(tboxInConcept != null) {
             Node parentNode = node.getParent();
             Set<OWLAxiom> parentStructure = parentNode.getStructure();
@@ -667,6 +678,11 @@ public class Reasoner {
     }
 
     private boolean applyLazyUnfoldingRule(OWLClassAssertionAxiom classAssertion, Node node){
+
+        /*
+         * Applica le regole di Lazy Unfolding a partire da un'asserzione. 
+         */
+
         if(Tu != null && !Tu.isEmpty()) {
             OWLClassExpression firstClass = null, secondClass = null;
             OWLClassExpression ce = classAssertion.getClassExpression();

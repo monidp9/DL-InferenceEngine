@@ -33,8 +33,7 @@ public class IOParser extends JDialog implements ActionListener{
     /*
      * Effettua il parsing di una stringa in Manchester Syntax presa in input,
      * convertendola in un concetto complesso (OWLClassExpression). Permette
-     * di caricare da file la knowledge base di interesse (TBox) e di convertire
-     * una TBox in un concetto complesso.
+     * di caricare da file la knowledge base di interesse (TBox).
      */
 
     private OWLOntology o;
