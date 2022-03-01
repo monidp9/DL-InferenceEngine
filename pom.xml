@@ -39,6 +39,13 @@
       <artifactId>javafx-controls</artifactId>
       <version>17.0.1</version>
     </dependency>
+
+    <dependency>
+      <groupId>net.wastl.rdfdot</groupId>
+      <artifactId>rdfdot-core</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+
   </dependencies>
 
   <build>

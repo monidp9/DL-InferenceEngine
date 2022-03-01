@@ -74,7 +74,7 @@ public class App
 
         File fileout = new File("pizza.man.owl");
         man.saveOntology(o, new ManchesterSyntaxDocumentFormat(), new FileOutputStream(fileout));
-
+    
        /*
 
         Stream<OWLClassExpression> operands5 = Stream.of(union3, union);
