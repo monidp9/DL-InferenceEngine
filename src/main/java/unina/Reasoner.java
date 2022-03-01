@@ -54,7 +54,6 @@ public class Reasoner {
             System.out.println("Tu: " + Tu);
             System.out.println("Tg: " + Tg);
 
-
             if(Tg != null && !Tg.isEmpty()){
                 OWLClassExpression translatedTg = fromTBoxToConcept(Tg);
                 System.out.println("\nTg: \n" + translatedTg + "\n");      
@@ -333,6 +332,12 @@ public class Reasoner {
     }
 
     private boolean isClashFree(Set<OWLAxiom> structure) {
+
+        /*
+         * Controlla se la struttura in ingresso contiene clash relativi solo
+         * a concetti atomici. 
+         */
+
         OWLClassExpression complementClassExpression, classExpression;
         OWLClassAssertionAxiom classAssertion;
         OWLIndividual x, y;
@@ -368,6 +373,12 @@ public class Reasoner {
     }
 
     private void setIfBlocked(Node node) {
+
+        /*
+         * Imposta il blocking al nodo passato in ingresso qualora la sua struttura
+         * dovesse essere inclusa in quella del padre. 
+         */
+
         if(tboxInConcept != null) {
             Node parentNode = node.getParent();
             Set<OWLAxiom> parentStructure = parentNode.getStructure();
@@ -661,7 +672,13 @@ public class Reasoner {
         }
     }
 
-    private boolean applyLazyUnfoldingRule(OWLClassAssertionAxiom classAssertion, Node node){
+    private boolean applyLazyUnfoldingRule(OWLClassAssertionAxiom classAssertion, Node node) {
+
+        /*
+         * Applica le regole per il lazy unfolding relative agli assiomi di equivalenza
+         * e sottoclasse. 
+         */
+
         if(Tu != null && !Tu.isEmpty()) {
             OWLClassExpression firstClass = null, secondClass = null;
             OWLClassExpression ce = classAssertion.getClassExpression();
@@ -746,8 +763,8 @@ public class Reasoner {
     private OWLClassExpression fromTBoxToConcept(List<OWLAxiom> tbox) {
 
         /*
-        * Trasforma Tbox in ingresso in un concetto. 
-        */
+         * Trasforma Tbox in ingresso in un concetto. 
+         */
 
         OWLSubClassOfAxiom subClassAx;
         OWLEquivalentClassesAxiom equivClassAx;
@@ -821,7 +838,6 @@ public class Reasoner {
                 subClass = subClass.getComplementNNF();
 
                 superClass = df.getOWLObjectAllValuesFrom(prop, rangeAx.getRange());
-
                 operand = df.getOWLObjectUnionOf(Stream.of(subClass, superClass));
 
                 if(domRangeConj != null) {

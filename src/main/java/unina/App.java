@@ -1,16 +1,22 @@
 package unina;
 
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.stream.Stream;
 
+import org.coode.owlapi.manchesterowlsyntax.ManchesterOWLSyntaxOntologyFormat;
 import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.formats.ManchesterSyntaxDocumentFormat;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
+import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 import org.semanticweb.owlapi.model.IRI;
 
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataFactory;
-
+import org.semanticweb.owlapi.model.OWLEquivalentClassesAxiom;
+import org.semanticweb.owlapi.model.OWLObjectComplementOf;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
 import org.semanticweb.owlapi.model.OWLObjectUnionOf;
@@ -19,13 +25,13 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 
 public class App 
 {
-    public static void main( String[] args ) {
+    public static void main( String[] args ) throws Exception {
         
         App app = new App();  
         app.createAnOntology();
     }
 
-    public void createAnOntology() {
+    public void createAnOntology() throws Exception{
 
         IRI IOR = IRI.create("http://owl.api.tutorial");
        
@@ -62,9 +68,13 @@ public class App
         Stream<OWLClassExpression> operands = Stream.of(Person, enrollU);
         OWLObjectUnionOf union = df.getOWLObjectUnionOf(operands);
 
-        System.out.println(union);
-        prova(union, union3);
-        System.out.println(union);
+        
+        OWLSubClassOfAxiom ax = df.getOWLSubClassOfAxiom(union, Person);
+
+        o.add(ax);
+
+        File fileout = new File("prova.man.owl");
+        man.saveOntology(o, new ManchesterSyntaxDocumentFormat(), new FileOutputStream(fileout));;
 
        /*
 
