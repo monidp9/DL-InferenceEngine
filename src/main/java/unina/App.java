@@ -8,6 +8,9 @@ import java.util.stream.Stream;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.ManchesterSyntaxDocumentFormat;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
+
+import net.wastl.rdfdot.config.GraphConfiguration;
+
 import org.semanticweb.owlapi.model.IRI;
 
 import org.semanticweb.owlapi.model.OWLClass;
@@ -19,12 +22,28 @@ import org.semanticweb.owlapi.model.OWLObjectUnionOf;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 
+
 public class App 
 {
     public static void main( String[] args ) throws Exception {
         
         App app = new App();  
         app.createAnOntology();
+
+        GraphConfiguration configuration = new GraphConfiguration();
+        
+/*
+        GraphConfiguration configuration = new GraphConfiguration();
+        GraphvizSerializer serializer = new GraphvizSerializerNative(configuration);
+*/
+/*
+        RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
+        parser.setRDFHandler(new GraphvizHandler(serializer));
+        parser.parse(in, "http://localhost/");
+
+        byte[] image = serializer.getResult();
+*/
+        
     }
 
     public void createAnOntology() throws Exception{
