@@ -3,27 +3,41 @@ package unina;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javafx.util.Pair;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 
+import guru.nidi.graphviz.attribute.*;
+import guru.nidi.graphviz.engine.*;
+import guru.nidi.graphviz.model.MutableGraph;
+import guru.nidi.graphviz.model.MutableNode;
+
+import static guru.nidi.graphviz.model.Factory.*;
+
 
 public class Reasoner {
     
-    private Node node = null;
     private OWLDataFactory df = OWLManager.getOWLDataFactory();
+
+    private List<OWLAxiom> Tu = null;
     private List<OWLAxiom> tbox = null; 
     private OWLClassExpression tboxInConcept = null; // o Tg in caso di lazy unfolding
-    private List<OWLAxiom> Tu = null;
     private boolean useLazyUnfolding = false;
+
+    private MutableGraph graph;
+    private HashMap<Node, MutableNode> graphNodes;
+    private Integer nodeId = 1;
 
     // ----------------------------------------------------------- reasoning ----------------------------------------------------------- //
 
     public boolean reasoning(OWLClassExpression C){
         OWLClassExpression translatedTbox = null;
         OWLIndividual x0 = df.getOWLAnonymousIndividual();
-        this.node = new Node(x0);
+        Node node = new Node(x0);
 
         Set<OWLAxiom> structure = node.getStructure();
         structure.add(df.getOWLClassAssertionAxiom(C, x0));
@@ -44,13 +58,31 @@ public class Reasoner {
             this.tboxInConcept = translatedTbox;
             structure.add(df.getOWLClassAssertionAxiom(translatedTbox, x0));
         }
+
+        // inizializzazione grafo  
+        MutableNode n = mutNode(nodeId.toString());
+        nodeId++;
+
+        graphNodes = new HashMap<Node, MutableNode>();
+        graphNodes.put(node, n);
+
+        graph = mutGraph().setDirected(true);
+        graph.add(n);
         
-        return dfs(node);
+        boolean sat = dfs(node);
+
+        // rendering del grafo
+        try {
+            Graphviz.fromGraph(graph).width(1000).render(Format.PNG).toFile(new File("result/ex1m.png"));
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
+
+        return sat;
     }
 
     private boolean dfs(Node node){ 
         if(node.isBlocked()) {
-            System.out.println("NODO BLOCCATO\n");
             return true;
         }
 
@@ -99,13 +131,17 @@ public class Reasoner {
             if (isAppliedRule){
                 node.setSx();
 
-                if (!isClashFree(newNode.getStructure()) || !dfs(newNode)){ 
+                writeOnGraph(node, newNode, "OR");                
+
+                if (!isClashFree(newNode.getStructure()) || !dfs(newNode)) { 
                     // viene ripresa la struttura priva del primo disgiunto
 
                     newNode = new Node(node.getIndividual()); 
                     newNode.setStructure(new TreeSet<OWLAxiom>(structure));
 
                     isAppliedRule = handleUnionOf(classExpression, individual, node, newNode); 
+                  
+                    writeOnGraph(node, newNode, "OR");
 
                     if (isClashFree(newNode.getStructure())){ 
                         return dfs(newNode);
@@ -153,6 +189,8 @@ public class Reasoner {
                 }
 
                 if (isAppliedRule){
+                    writeOnGraph(node, newNode, "∃");
+
                     // applica UNIVERSALE esaustivamente
                     for (OWLAxiom secondAxiom : structureTmp) {
                         if (secondAxiom instanceof OWLClassAssertionAxiom){ 
@@ -178,7 +216,6 @@ public class Reasoner {
         } else {
             return false;
         }
-        
         return true;
     } 
 
@@ -844,4 +881,15 @@ public class Reasoner {
         return concept;
     }
 
+     // ----------------------------------------------------------- utility ----------------------------------------------------------- //
+
+     private void writeOnGraph(Node node, Node child, String rule) {
+        MutableNode mutNode = graphNodes.get(node);
+        MutableNode mutChild = mutNode(nodeId.toString());
+
+        mutNode.addLink(to(mutChild).with(Label.of(" " + rule)));
+        graphNodes.put(child, mutChild);
+
+        nodeId++;
+     }
 }

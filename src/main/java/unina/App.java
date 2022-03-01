@@ -9,7 +9,13 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.ManchesterSyntaxDocumentFormat;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 
-import net.wastl.rdfdot.config.GraphConfiguration;
+import guru.nidi.graphviz.attribute.*;
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
+import guru.nidi.graphviz.model.MutableGraph;
+import guru.nidi.graphviz.model.MutableNode;
+
+import static guru.nidi.graphviz.model.Factory.*;
 
 import org.semanticweb.owlapi.model.IRI;
 
@@ -28,22 +34,18 @@ public class App
     public static void main( String[] args ) throws Exception {
         
         App app = new App();  
-        app.createAnOntology();
 
-        GraphConfiguration configuration = new GraphConfiguration();
-        
-/*
-        GraphConfiguration configuration = new GraphConfiguration();
-        GraphvizSerializer serializer = new GraphvizSerializerNative(configuration);
-*/
-/*
-        RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
-        parser.setRDFHandler(new GraphvizHandler(serializer));
-        parser.parse(in, "http://localhost/");
+        // MutableGraph g = mutGraph("example1").setDirected(true).add(
+        //                  mutNode("a").add(Color.RED).addLink(mutNode("b")));
+        MutableGraph g = mutGraph("example").setDirected(true);
 
-        byte[] image = serializer.getResult();
-*/
-        
+        MutableNode a = mutNode("a");
+        MutableNode b = mutNode("b");
+        g.add(a);
+
+        a.addLink(to(b).with(Label.of(" OR")));
+
+        Graphviz.fromGraph(g).width(200).render(Format.PNG).toFile(new File("result/ex1m.png"));
     }
 
     public void createAnOntology() throws Exception{
@@ -89,51 +91,6 @@ public class App
 
         File fileout = new File("pizza.man.owl");
         man.saveOntology(o, new ManchesterSyntaxDocumentFormat(), new FileOutputStream(fileout));
-    
-       /*
-
-        Stream<OWLClassExpression> operands5 = Stream.of(union3, union);
-        OWLObjectIntersectionOf intersection = df.getOWLObjectIntersectionOf(operands5);
-
-
-    
-        System.out.println("Ciao Sasi \n\n\n");
-        System.out.println("Stampa concetto C\n");
-        System.out.println(intersection + "\n\n");
-
-        OWLIndividual x = df.getOWLAnonymousIndividual();
-        OWLIndividual y = df.getOWLAnonymousIndividual();
-
-
-
-        OWLClassAssertionAxiom a1 = df.getOWLClassAssertionAxiom(Person, x);
-        OWLClassAssertionAxiom a2 = df.getOWLClassAssertionAxiom(Person, x);
-
-
-        a1.accept(new OWLAxiomVisitor() {
-            
-        });
-
-        OWLClassExpression c1 = a1.getClassExpression();
-        OWLClassExpression c2 = a2.getClassExpression();
-
-        System.out.println("prova equals " + c1.equals(c2.getComplementNNF()));
-        System.out.println("prova equals " + a1.equals(a2));
-
-
-        Set<OWLAxiom> aboxes = new TreeSet<>();
-
-        OWLObjectPropertyAssertionAxiom p = df.getOWLObjectPropertyAssertionAxiom(attends, x, y);
-
-        aboxes.add(p);
-
-        
-        System.out.println("Tableux : "+ r.reasoning(intersection));
-    */ 
-    }
-
-    private void prova(OWLObjectUnionOf union, OWLObjectUnionOf union3) {
-        union = union3;
     }
 
 
