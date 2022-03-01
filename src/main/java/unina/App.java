@@ -69,12 +69,11 @@ public class App
         OWLObjectUnionOf union = df.getOWLObjectUnionOf(operands);
 
         
-        OWLSubClassOfAxiom ax = df.getOWLSubClassOfAxiom(union, Person);
+        IRI iri = IRI.create("https://protege.stanford.edu/ontologies/pizza/pizza.owl");
+        o = man.loadOntology(iri);
 
-        o.add(ax);
-
-        File fileout = new File("prova.man.owl");
-        man.saveOntology(o, new ManchesterSyntaxDocumentFormat(), new FileOutputStream(fileout));;
+        File fileout = new File("pizza.man.owl");
+        man.saveOntology(o, new ManchesterSyntaxDocumentFormat(), new FileOutputStream(fileout));
 
        /*
 

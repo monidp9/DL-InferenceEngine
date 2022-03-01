@@ -20,7 +20,12 @@ Class: t:Person
 
     SubClassOf: 
         t:eats some t:Person
-        
+
+
+Class: t:Person
+
+    EquivalentTo: not t:Animal    
+       
 
 ObjectProperty: t:eats
 

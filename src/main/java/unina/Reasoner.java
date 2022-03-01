@@ -6,24 +6,7 @@ import javafx.util.Pair;
 import java.util.*;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.model.OWLAxiom;
-import org.semanticweb.owlapi.model.OWLClass;
-import org.semanticweb.owlapi.model.OWLClassAssertionAxiom;
-import org.semanticweb.owlapi.model.OWLClassExpression;
-import org.semanticweb.owlapi.model.OWLClassExpressionVisitor;
-import org.semanticweb.owlapi.model.OWLDataFactory;
-import org.semanticweb.owlapi.model.OWLEquivalentClassesAxiom;
-import org.semanticweb.owlapi.model.OWLIndividual;
-import org.semanticweb.owlapi.model.OWLObjectAllValuesFrom;
-import org.semanticweb.owlapi.model.OWLObjectComplementOf;
-import org.semanticweb.owlapi.model.OWLObjectIntersectionOf;
-import org.semanticweb.owlapi.model.OWLObjectPropertyAssertionAxiom;
-import org.semanticweb.owlapi.model.OWLObjectPropertyDomainAxiom;
-import org.semanticweb.owlapi.model.OWLObjectPropertyExpression;
-import org.semanticweb.owlapi.model.OWLObjectPropertyRangeAxiom;
-import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
-import org.semanticweb.owlapi.model.OWLObjectUnionOf;
-import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
+import org.semanticweb.owlapi.model.*;
 
 
 public class Reasoner {
@@ -51,15 +34,13 @@ public class Reasoner {
             List<OWLAxiom> Tg = tboxLazyUnfolding.getValue();
             this.Tu = Tu;
 
-            if(Tg != null && !Tg.isEmpty()){
+            if(Tg != null && !Tg.isEmpty()) {
                 OWLClassExpression translatedTg = fromTBoxToConcept(Tg);
-                System.out.println("\nTg: \n" + translatedTg + "\n");
                 this.tboxInConcept = translatedTg;
                 structure.add(df.getOWLClassAssertionAxiom(translatedTg, x0));
-            } 
+            }
         } else {
             translatedTbox = fromTBoxToConcept(tbox);
-            System.out.println("\nTBOX: \n" + translatedTbox + "\n");      
             this.tboxInConcept = translatedTbox;
             structure.add(df.getOWLClassAssertionAxiom(translatedTbox, x0));
         }
@@ -69,6 +50,7 @@ public class Reasoner {
 
     private boolean dfs(Node node){ 
         if(node.isBlocked()) {
+            System.out.println("NODO BLOCCATO\n");
             return true;
         }
 
@@ -331,6 +313,7 @@ public class Reasoner {
         return false;
     }
 
+    // VERA FUNZIONE
     private boolean isClashFree(Set<OWLAxiom> structure) {
 
         /*
@@ -374,8 +357,8 @@ public class Reasoner {
     private void setIfBlocked(Node node) {
 
         /*
-         * Imposta il blocking di un nodo qualora la sua struttura fosse 
-         * contenuta in quella del padre. 
+         * Imposta il blocking di un nodo qualora la sua struttura dovesse 
+         * essere contenuta in quella del padre. 
          */
 
         if(tboxInConcept != null) {
@@ -706,6 +689,7 @@ public class Reasoner {
                     for(OWLAxiom axiom: Tu) {
                         if(axiom instanceof OWLEquivalentClassesAxiom) {
                             equivAx = (OWLEquivalentClassesAxiom) axiom;
+
                             List<OWLClassExpression> l = equivAx.classExpressions().collect(Collectors.toList());
                             firstClass = l.get(0);
                             secondClass = l.get(1);
@@ -719,6 +703,7 @@ public class Reasoner {
 
                         } else if(axiom instanceof OWLSubClassOfAxiom) {
                             subClassAx = (OWLSubClassOfAxiom) axiom;
+
                             firstClass = subClassAx.getSubClass();
                             secondClass = subClassAx.getSuperClass();
 
@@ -737,10 +722,12 @@ public class Reasoner {
                     ce = complement.getOperand();
 
                     for(OWLAxiom axiom: Tu) {
-                        if(axiom instanceof OWLSubClassOfAxiom) {
-                            subClassAx = (OWLSubClassOfAxiom) axiom;
-                            firstClass = subClassAx.getSubClass();
-                            secondClass = subClassAx.getSuperClass();
+                        if(axiom instanceof OWLEquivalentClassesAxiom) {
+                            equivAx = (OWLEquivalentClassesAxiom) axiom;
+
+                            List<OWLClassExpression> l = equivAx.classExpressions().collect(Collectors.toList());
+                            firstClass = l.get(0);
+                            secondClass = l.get(1);
 
                             if(firstClass.equals(ce)) {
                                 secondClass = secondClass.getComplementNNF();
