@@ -28,11 +28,11 @@ import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 
 public class Reasoner {
     
-    private Node node;
+    private Node node = null;
     private OWLDataFactory df = OWLManager.getOWLDataFactory();
-    private List<OWLAxiom> tbox = null;
-    private OWLClassExpression tboxInConcept = null;
-    private List<OWLAxiom> Tu;
+    private List<OWLAxiom> tbox = null; 
+    private OWLClassExpression tboxInConcept = null; // o Tg in caso di lazy unfolding
+    private List<OWLAxiom> Tu = null;
     private boolean useLazyUnfolding = false;
 
     // ----------------------------------------------------------- reasoning ----------------------------------------------------------- //
@@ -47,19 +47,15 @@ public class Reasoner {
 
         if(useLazyUnfolding && tbox != null && !tbox.isEmpty()){
             Pair<List<OWLAxiom>, List<OWLAxiom>> tboxLazyUnfolding = lazyUnfoldingPartitioning(tbox); 
-            List<OWLAxiom> Tg = tboxLazyUnfolding.getValue();
             List<OWLAxiom> Tu = tboxLazyUnfolding.getKey();
+            List<OWLAxiom> Tg = tboxLazyUnfolding.getValue();
             this.Tu = Tu;
-
-            System.out.println("Tu: " + Tu);
-            System.out.println("Tg: " + Tg);
-
 
             if(Tg != null && !Tg.isEmpty()){
                 OWLClassExpression translatedTg = fromTBoxToConcept(Tg);
-                System.out.println("\nTg: \n" + translatedTg + "\n");      
+                System.out.println("\nTg: \n" + translatedTg + "\n");
+                this.tboxInConcept = translatedTg;
                 structure.add(df.getOWLClassAssertionAxiom(translatedTg, x0));
-                
             } 
         } else {
             translatedTbox = fromTBoxToConcept(tbox);
@@ -71,7 +67,7 @@ public class Reasoner {
         return dfs(node);
     }
 
-    private boolean dfs(Node node){ //ragionare sull eliminazione dei puntatori e dei nodi 
+    private boolean dfs(Node node){ 
         if(node.isBlocked()) {
             return true;
         }
@@ -80,8 +76,7 @@ public class Reasoner {
         Node newNode = null;
 
         Set<OWLAxiom> structure = node.getStructure();
-        Set<OWLAxiom> structureTmp;
-
+        Set<OWLAxiom> structureTmp = null;
         OWLClassExpression classExpression = null;
         OWLIndividual individual = null;
 
@@ -118,24 +113,19 @@ public class Reasoner {
                 }
             }
 
-            /* 
-                se la regola non viene applicata viene valutata il prossimo assioma; 
-                terminato il ciclo si valutano le applicazioni delle regole esistenziali ed universali
-            */
+            // se la regola non viene applicata viene valutato il prossimo assioma.
             if (isAppliedRule){
-                node.setSxPtr(newNode);
-                //se la nuovstruttura non è clash-free o la chiamata a sx ritorna false si analizza il ramo dx
+                node.setSx();
+
                 if (!isClashFree(newNode.getStructure()) || !dfs(newNode)){ 
-                    // viene ripresa la struttura non contenente il primo disgiunto
-                    // structureTmp = new TreeSet<OWLAxiom>(structure); non serve più structureTmp è la struttura iniziale
+                    // viene ripresa la struttura priva del primo disgiunto
+
                     newNode = new Node(node.getIndividual()); 
                     newNode.setStructure(new TreeSet<OWLAxiom>(structure));
 
-                    //la regola è sempre applicata in quanto si aggiunge alla struttura l'altro disgiunto
                     isAppliedRule = handleUnionOf(classExpression, individual, node, newNode); 
 
                     if (isClashFree(newNode.getStructure())){ 
-                        node.setDxPtr(newNode);
                         return dfs(newNode);
                     } else {
                         return false;
@@ -169,11 +159,13 @@ public class Reasoner {
                     classExpression = ((OWLClassAssertionAxiom) firstAxiom).getClassExpression();
     
                     if (classExpression instanceof OWLObjectSomeValuesFrom) {
-                        newNode = new Node(df.getOWLAnonymousIndividual()); //non è detto che viene utilizzato, anzi se non va a buon fine l'applicazione della regola è creato invano
-                        newNode.setStructure(new TreeSet<OWLAxiom>(structure)); // il nuovo nodo porta con se i concetti del padre
+
+                        // non è detto che venga sempre utilizzato; il nuovo nodo porta cin sé i concetti del padre
+                        newNode = new Node(df.getOWLAnonymousIndividual());
+                        newNode.setStructure(new TreeSet<OWLAxiom>(structure)); 
 
                         individual = ((OWLClassAssertionAxiom) firstAxiom).getIndividual();
-                        // structureTmp non servirebbe in quanto basterebbe indicare a "handleAllValuesFrom" semplicemente qual è la proprietà da tenere in considerazione
+
                         isAppliedRule = handleSomeValuesFrom(classExpression, individual, node, newNode);
                     }
                 }
@@ -190,7 +182,7 @@ public class Reasoner {
                     }
                     
                     if (isClashFree(newNode.getStructure())){ 
-                        node.setSxPtr(newNode);
+                        node.setSx();
                         setIfBlocked(newNode);
                         if(!dfs(newNode)){
                             return false;
@@ -217,7 +209,6 @@ public class Reasoner {
                 public void visit(OWLObjectAllValuesFrom avf) {
                     OWLClassExpression filler = avf.getFiller();
                     OWLObjectPropertyExpression property = avf.getProperty();
-
                     OWLObjectPropertyAssertionAxiom propAssertion = df.getOWLObjectPropertyAssertionAxiom(property, node.getIndividual(), newNode.getIndividual());
                     
                     Set<OWLAxiom> structure = node.getStructure();
@@ -225,7 +216,7 @@ public class Reasoner {
                     
                     if (structure.contains(propAssertion)) {
                         OWLClassAssertionAxiom classAssertion = df.getOWLClassAssertionAxiom(filler, newNode.getIndividual());
-                        newStructure.add(classAssertion); // essendo un set non viene aggiunto se già presente
+                        newStructure.add(classAssertion); 
                     }
                 }
             });
@@ -235,8 +226,10 @@ public class Reasoner {
     }
 
     private boolean handleSomeValuesFrom(OWLClassExpression classExpression, OWLIndividual individual, Node node, Node newNode) {
+
         if(individual.equals(node.getIndividual())) {
-            int strSize = newNode.getStructure().size();
+            int oldSize = newNode.getStructure().size();
+
             classExpression.accept(new OWLClassExpressionVisitor() {
                 @Override
                 public void visit(OWLObjectSomeValuesFrom svf) {
@@ -256,14 +249,14 @@ public class Reasoner {
                     newNode.setParent(node);
 
                     if(tboxInConcept != null) {
-                        // la regola dell'esistenziale è stata applicata e la tbox è vuota: la si aggiunge nel nuovo individuo
+                        // la regola dell'esistenziale è stata applicata e la tbox (o Tg in caso di lazy unfolding) non è vuota: la si aggiunge nel nuovo individuo
                         OWLClassAssertionAxiom tboxAss = df.getOWLClassAssertionAxiom(tboxInConcept, newNode.getIndividual());
                         newStructure.add(tboxAss);
                     }
                     
                 }
             });
-            return strSize < newNode.getStructure().size();
+            return oldSize < newNode.getStructure().size();
         }
         return false;
     }
@@ -302,7 +295,7 @@ public class Reasoner {
                     OWLClassExpression secondDisj = ou.getOperandsAsList().get(1);
                     OWLClassAssertionAxiom secondDisjAx = df.getOWLClassAssertionAxiom(secondDisj, newNode.getIndividual());
 
-                    // quando termina la chiamata ricorsiva a sx e si risale, bisogna aggiungere il secondo disgiunto e scendere a dx
+                    // utile per forzare il controllo del secondo disgiunto dopo terminazione della chiamata ricorsiva a sx
                     flag = false;
 
                     for (OWLClassExpression disjunct : ou.getOperandsAsList()) {
@@ -314,14 +307,20 @@ public class Reasoner {
                                 La seconda condizione serve quando ripassando su una formula (P or B) e provenendo
                                 da B già selezionato, P non deve essere messo nella struttura.
                             */
-                            if ((node.getSxPtr() == null || flag) && !newStructure.contains(secondDisjAx)){
+                            if ((!node.getSx() || flag) && !newStructure.contains(secondDisjAx)){
                                 newStructure.add(classAssertion);
                                 break;
                             } else {
+                
                                 flag = true;
                             }
-                            
-                        } else {                         
+                        } else {      
+                            /* 
+                             * Non si applica la regola UnionOf quando:
+                             *   - unione già risolta 
+                             *   - disgiunto già presente nella struttura, quindi non sono rispettate le condizioni 
+                             *     per l'applicazione della regola 
+                             */                   
                             break;
                         }
                     }
@@ -406,9 +405,17 @@ public class Reasoner {
 
     private Pair<List<OWLAxiom>, List<OWLAxiom>> lazyUnfoldingPartitioning(List<OWLAxiom> tbox){
         /* 
-         * tale metodo partiziona la tbox andando a creare due liste di assiomi 
-         * Tu contenente solo assiomi unfoldable e Tg.
+         * Tale metodo partiziona la tbox andando a creare due liste di assiomi:
+         *  - Tu contenente solo assiomi unfoldable
+         *  - Tg contenente la restante parte di assiomi
+         * 
          * Il tipo di ritorno pair contiene nell'ordine Tu e Tg.
+         * 
+         * La tbox presenta solo 4 tipologie di assiomi: OWLEquivalentClassesAxiom,
+         * OWLSubClassOfAxiom, OWLObjectPropertyDomainAxiom, OWLObjectPropertyDomainAxiom.
+         * Vengono presi in considerazione soltanto i primi due mentre gli altri saranno esclusi
+         * in quanto rispettano sicuramente la precondizione di avere un concetto atomico in LHS 
+         * (dopo avrli trasformati in assiomi di inclusione)
          */
 
         List<OWLAxiom> Tu = new LinkedList<>();
@@ -416,10 +423,8 @@ public class Reasoner {
 
         OWLEquivalentClassesAxiom equivClassAx;
         OWLSubClassOfAxiom subClassAx, modifiedSubClassAx;
-
-        // presupponiamo che la tbox sia formata solo da OWLEquivalentClassesAxiom e OWLSubClassOfAxiom
         
-        for(OWLAxiom axiom : tbox){ // pesca a caso o un OWLEquivalentClassesAxiom o un OWLSubClassOfAxiom
+        for(OWLAxiom axiom : tbox){ 
             if (axiom instanceof OWLEquivalentClassesAxiom){
                 equivClassAx = (OWLEquivalentClassesAxiom) axiom;
 
@@ -432,6 +437,7 @@ public class Reasoner {
                 subClassAx = (OWLSubClassOfAxiom) axiom;
 
                 if(isUnfoldableAddingSubClass(Tu, subClassAx)){
+
                     if(subClassAx instanceof OWLObjectIntersectionOf){
                         modifiedSubClassAx = transformSubClassAx(subClassAx);
                         Tu.add(modifiedSubClassAx);
@@ -452,7 +458,7 @@ public class Reasoner {
     private OWLSubClassOfAxiom transformSubClassAx(OWLSubClassOfAxiom subClassAx){
 
         /*  
-         *  il metodo trasforma l'assioma di inclusione in modo tale che
+         *  Il metodo trasforma l'assioma di inclusione in modo tale che
          *  nel LHS sia presente solo un concetto atomico. La verifica
          *  che ci siano le condizioni per farlo viene fatta nel metodo
          *  'isUnfoldableAddingSubClass'
@@ -461,7 +467,7 @@ public class Reasoner {
         OWLClassExpression A = subClassAx.getSubClass();
         OWLClassExpression C = subClassAx.getSuperClass();
 
-        List<OWLSubClassOfAxiom> ret = new LinkedList<>();
+        Container<OWLSubClassOfAxiom> ret = new Container<>();
 
         A.accept(new OWLClassExpressionVisitor() {
             @Override
@@ -476,32 +482,31 @@ public class Reasoner {
                         break;
                     }
                 }
-                if(newA != null){ //lo sarà sempre
+                //lo sarà sempre perché il controllo viene fatto in 'isUnfoldableAddingSubClass'
+                if(newA != null){ 
                     conjunctSet.remove(newA);
                     operand = df.getOWLObjectIntersectionOf(conjunctSet);  
                     operand = operand.getComplementNNF();
                     superClass = df.getOWLObjectUnionOf(Stream.of(operand, C));
                     newSubClassAx = df.getOWLSubClassOfAxiom(newA, superClass);
 
-                    ret.add(newSubClassAx);
+                    ret.setValue(newSubClassAx);
                 }
             }
         });
-        return ret.get(0);
+        return ret.getValue();
     }
 
     private boolean isUnfoldableAddingSubClass(List<OWLAxiom> Tu, OWLSubClassOfAxiom subClassAx) {
         
         OWLClassExpression A = null;
-        List<Boolean> ret = new LinkedList<>();
-        ret.add(false);
+        Container<Boolean> ret = new Container<>(false);
         A = subClassAx.getSubClass();
 
-
         /* 
-         * verifica che A sia un concetto atomico oppure del tipo A ∩ C (con C concetto complesso) 
-         * trasformando l'inclusione in modo da avere il LHS formato da un solo concetto atomico A
-         * e spostando a destra i restanti congiunti C
+         * Verifica che A o sia un concetto atomico oppure del tipo A ∩ C (con C che può essere 
+         * un concetto complesso) trasformando l'inclusione in modo da avere il LHS formato da un 
+         * solo concetto atomico A e spostando a destra i restanti congiunti C
         */
         if(A instanceof OWLClass){
             return checkCompatibilityWithGCI(Tu, (OWLClass) A);    
@@ -513,12 +518,12 @@ public class Reasoner {
                     Set<OWLClassExpression> conjunctSet =  oi.asConjunctSet(); 
                     for (OWLClassExpression ce : conjunctSet){
                         if (ce instanceof OWLClass){
-                            ret.set(0, true);
+                            ret.setValue(true);
                         }
                     }
                 }  
             });
-            if(ret.get(0)){
+            if(ret.getValue()){
                 return true;
             }
         }
@@ -528,24 +533,21 @@ public class Reasoner {
     private boolean isUnfoldableAddingEquivalentClass(List<OWLAxiom> Tu, OWLEquivalentClassesAxiom equivClassAx) {
 
         /* 
-         * il metodo si aspetta che il LHS di un EquoivalentClassesAxiom sia un concetto atomico 
-         * il caso contrario, l'assioma non viene considerato
+         * Il metodo si aspetta che il LHS di un EquivalentClassesAxiom sia un concetto atomico (OWLClass)
+         * In caso contrario, l'assioma non viene considerato.
          */
 
-
         List<OWLClassExpression> equivParts = equivClassAx.classExpressions().collect(Collectors.toList());
-        OWLClassExpression A = equivParts.get(0); // si assume che A sia di tipo OWLClass
-        OWLClassExpression C = equivParts.get(1); // C può essere un ER.C ? 
+        OWLClassExpression A = equivParts.get(0); 
+        OWLClassExpression C = equivParts.get(1); 
         
-        List<Boolean> ret = new LinkedList<>();
-        ret.add(true);
-
+        Container<Boolean> ret = new Container<>(true);
 
         if (A instanceof OWLClass){
-            // controlla che l'assioma non sia ciclico
-            isCyclicalConcept(Tu, (OWLClass) A, C, ret);
 
-            if(!ret.get(0)){
+            isAcyclicalConcept(Tu, (OWLClass) A, C, ret);
+
+            if(!ret.getValue()){
                 return false;
             }
             return checkCompatibilityWithGCI(Tu, (OWLClass) A);  
@@ -557,24 +559,29 @@ public class Reasoner {
 
     private boolean checkCompatibilityWithGCI(List<OWLAxiom> Tu, OWLClass A){
 
+        /*
+         * Il metodo controlla che il concetto atomico A non compaia a
+         * sinistra di nessuna altra GCI in Tu.
+         * In Tu ci può essere solo un assioma di inclusione che nel LHS ha
+         * un certo concetto atomico P. 
+         */
+        
         OWLSubClassOfAxiom subClassAx;
         OWLEquivalentClassesAxiom equivClassAx;
         OWLClassExpression P;
         
-        // controlla che A non compaia a sinistra di nessun’altra GCI di Tu
         for(OWLAxiom axiom : Tu){
-            // controllo inclusioni  (Tu viene forzato ad avere una sola inclusione possibile per non avere ambiguità nell'applicazione delle regole)
+            // controllo inclusioni 
             if (axiom instanceof OWLSubClassOfAxiom){
                 subClassAx = (OWLSubClassOfAxiom) axiom;
                 P = subClassAx.getSubClass();
-                if(A.equals(P)){  // bisogna valutare anche il complemento ??
+                if(A.equals(P)){  
                     return false;
                 }
             }
             // controllo equivalenze
             if (axiom instanceof OWLEquivalentClassesAxiom){
                 equivClassAx = (OWLEquivalentClassesAxiom) axiom;
-
                 List<OWLClassExpression> equivParts = equivClassAx.classExpressions().collect(Collectors.toList());
                 P = equivParts.get(0); 
 
@@ -586,19 +593,18 @@ public class Reasoner {
         return true;
     }
 
-    private void isCyclicalConcept(List<OWLAxiom> Tu, OWLClass A, OWLClassExpression C, List<Boolean> ret) {
+    private void isAcyclicalConcept(List<OWLAxiom> Tu, OWLClass A, OWLClassExpression C, Container<Boolean> ret) {
 
         /* 
-         * verifica che nessun concetto sia definito direttamente 
-         * o indirettamente in termini di se stesso.
+         * Verifica che nessun concetto sia definito direttamente o indirettamente in termini di se stesso.
          * 
-         * PS. non tiene conto dei fake cicle, cioè casi in cui il concetto 
-         *     è sintatticamente ciclico, ma non semanticamente.
+         * PS. non tiene conto dei fake cicle, cioè casi in cui il concetto è sintatticamente ciclico, 
+         * ma non semanticamente.
          */
 
         if(C instanceof OWLClass){
-            if (C.equals(A)){ //vale anche se c'è il complemento ???
-                ret.set(0, false);
+            if (C.equals(A)){ 
+                ret.setValue(false);
             } else {
                 for (OWLAxiom axiom: Tu){
                     if(axiom instanceof OWLEquivalentClassesAxiom){
@@ -608,9 +614,8 @@ public class Reasoner {
                         OWLClassExpression lhsEquiv = equivParts.get(0);
 
                         if(C.equals(lhsEquiv)){
-
                             OWLClassExpression rhsEquiv = equivParts.get(1);
-                            isCyclicalConcept(Tu, A, rhsEquiv, ret);
+                            isAcyclicalConcept(Tu, A, rhsEquiv, ret);
                         }
                     }
                 }
@@ -622,8 +627,8 @@ public class Reasoner {
                 @Override
                 public void visit(OWLObjectIntersectionOf oi) {
                     for (OWLClassExpression ce : oi.getOperandsAsList()) {
-                        isCyclicalConcept(Tu, A, ce, ret);
-                        if(!ret.get(0)){
+                        isAcyclicalConcept(Tu, A, ce, ret);
+                        if(!ret.getValue()){
                             break;
                         }
                     }
@@ -635,8 +640,8 @@ public class Reasoner {
                 @Override
                 public void visit(OWLObjectUnionOf ou) {
                     for (OWLClassExpression ce : ou.getOperandsAsList()) {
-                        isCyclicalConcept(Tu, A, ce, ret);
-                        if(!ret.get(0)){
+                        isAcyclicalConcept(Tu, A, ce, ret);
+                        if(!ret.getValue()){
                             break;
                         }
                     }
@@ -647,7 +652,7 @@ public class Reasoner {
             C.accept(new OWLClassExpressionVisitor() {
                 @Override
                 public void visit(OWLObjectSomeValuesFrom svf) {
-                    isCyclicalConcept(Tu, A, svf.getFiller(), ret);
+                    isAcyclicalConcept(Tu, A, svf.getFiller(), ret);
                 }
             });
         }
@@ -655,7 +660,7 @@ public class Reasoner {
             C.accept(new OWLClassExpressionVisitor() {
                 @Override
                 public void visit(OWLObjectAllValuesFrom avf) {
-                    isCyclicalConcept(Tu, A, avf.getFiller(), ret);
+                    isAcyclicalConcept(Tu, A, avf.getFiller(), ret);
                 }
             });
         }
@@ -736,7 +741,6 @@ public class Reasoner {
         }
         return false;
     }
-
 
     // ----------------------------------------------------------- tbox management ----------------------------------------------------------- //
 
