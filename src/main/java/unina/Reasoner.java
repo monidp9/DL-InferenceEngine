@@ -763,7 +763,7 @@ public class Reasoner {
     private OWLClassExpression fromTBoxToConcept(List<OWLAxiom> tbox) {
 
         /*
-         * Trasforma Tbox in ingresso in un concetto. 
+         * Trasforma la Tbox in ingresso in un concetto. 
          */
 
         OWLSubClassOfAxiom subClassAx;
