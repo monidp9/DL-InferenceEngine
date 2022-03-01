@@ -32,7 +32,7 @@ Class: t:Person
     SubClassOf: 
         not (t:Food)
 
-
+        
 Class: t:Man 
 
     EquivalentTo: 
