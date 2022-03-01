@@ -10,10 +10,10 @@ import org.semanticweb.owlapi.model.OWLIndividual;
 public class Node {
 
     private Set<OWLAxiom> structure;
-    private Boolean sx = false;
     private Node parent = null;
     private OWLIndividual x;
     private boolean blocked = false;
+    private boolean sx = false;
 
     public Node(OWLIndividual x){
         this.structure = new TreeSet <OWLAxiom>();
@@ -48,7 +48,7 @@ public class Node {
         return parent;
     }
 
-    public Boolean getSx(){
+    public boolean getSx(){
         return this.sx;
     }
 
