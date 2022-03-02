@@ -4,19 +4,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javafx.util.Pair;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
-
-import guru.nidi.graphviz.attribute.*;
-import guru.nidi.graphviz.engine.*;
-import guru.nidi.graphviz.model.MutableGraph;
-import guru.nidi.graphviz.model.MutableNode;
-
-import static guru.nidi.graphviz.model.Factory.*;
 
 
 public class Reasoner {
@@ -28,9 +19,7 @@ public class Reasoner {
     private OWLClassExpression tboxInConcept = null; // o Tg in caso di lazy unfolding
     private boolean useLazyUnfolding = false;
 
-    private MutableGraph graph;
-    private HashMap<Node, MutableNode> graphNodes;
-    private Integer nodeId = 1;
+    private RDFGraphWriter rdfGraphWriter;
 
     // ----------------------------------------------------------- reasoning ----------------------------------------------------------- //
 
@@ -59,24 +48,9 @@ public class Reasoner {
             structure.add(df.getOWLClassAssertionAxiom(translatedTbox, x0));
         }
 
-        // inizializzazione grafo  
-        MutableNode n = mutNode(nodeId.toString());
-        nodeId++;
+        rdfGraphWriter = new RDFGraphWriter();
 
-        graphNodes = new HashMap<Node, MutableNode>();
-        graphNodes.put(node, n);
-
-        graph = mutGraph().setDirected(true);
-        graph.add(n);
-        
         boolean sat = dfs(node);
-
-        // rendering del grafo
-        try {
-            Graphviz.fromGraph(graph).width(1000).render(Format.PNG).toFile(new File("result/ex1m.png"));
-        } catch(IOException e) {
-            e.printStackTrace();
-        }
 
         return sat;
     }
@@ -132,8 +106,6 @@ public class Reasoner {
             if (isAppliedRule){
                 node.setSx();
 
-                writeOnGraph(node, newNode, "OR");                
-
                 if (!isClashFree(newNode.getStructure()) || !dfs(newNode)) { 
                     // viene ripresa la struttura priva del primo disgiunto
 
@@ -142,8 +114,6 @@ public class Reasoner {
 
                     isAppliedRule = handleUnionOf(classExpression, individual, node, newNode); 
                   
-                    writeOnGraph(node, newNode, "OR");
-
                     if (isClashFree(newNode.getStructure())){ 
                         return dfs(newNode);
                     } else {
@@ -169,6 +139,8 @@ public class Reasoner {
             }
         } while(isAppliedRule);
 
+        rdfGraphWriter.addRDFTriple(node, "labels", "(A and B) or C");
+
         // applica ESISTENZIALE
         if(isClashFree(structure)) { 
             structureTmp = new TreeSet<OWLAxiom>(structure);
@@ -190,7 +162,7 @@ public class Reasoner {
                 }
 
                 if (isAppliedRule){
-                    writeOnGraph(node, newNode, "∃");
+                    rdfGraphWriter.addRDFTriple(node, "exEdge", newNode);
 
                     // applica UNIVERSALE esaustivamente
                     for (OWLAxiom secondAxiom : structureTmp) {
@@ -920,16 +892,4 @@ public class Reasoner {
 
         return concept;
     }
-
-     // ----------------------------------------------------------- utility ----------------------------------------------------------- //
-
-     private void writeOnGraph(Node node, Node child, String rule) {
-        MutableNode mutNode = graphNodes.get(node);
-        MutableNode mutChild = mutNode(nodeId.toString());
-
-        mutNode.addLink(to(mutChild).with(Label.of(" " + rule)));
-        graphNodes.put(child, mutChild);
-
-        nodeId++;
-     }
 }

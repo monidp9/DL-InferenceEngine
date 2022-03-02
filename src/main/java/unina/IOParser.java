@@ -301,11 +301,11 @@ public class IOParser extends JDialog implements ActionListener{
         Reasoner reasoner = new Reasoner();
 
         // caricamento TBox
-        String filePath = "ontologie/foodeasy.man.owl";
+        String filePath = "ontologie/loop.man.owl";
         io.loadOntology(filePath);
         List<OWLAxiom> tbox = io.getTbox();
 
-        // lettura e traduzione in concetto
+        //lettura e traduzione in concetto
         OWLClassExpression concept = io.readAndTraslateExpr();
 
         System.out.println("\n ------ TRANSLATED ------");
