@@ -34,7 +34,7 @@ public class Reasoner {
 
     // ----------------------------------------------------------- reasoning ----------------------------------------------------------- //
 
-    public boolean reasoning(OWLClassExpression C){
+    public boolean reasoning(OWLClassExpression C) {
         OWLClassExpression translatedTbox = null;
         OWLIndividual x0 = df.getOWLAnonymousIndividual();
         Node node = new Node(x0);
@@ -83,6 +83,7 @@ public class Reasoner {
 
     private boolean dfs(Node node){ 
         if(node.isBlocked()) {
+            System.out.println("BLOCKED");
             return true;
         }
 
@@ -404,22 +405,61 @@ public class Reasoner {
 
             OWLClassAssertionAxiom classAssertion, parentClassAssertion;
             OWLIndividual individual;
-            OWLClassExpression ce;
+            OWLClassExpression ce, parentCe;
+
+            Set<OWLClassExpression> ceFlat = null, parentCeFlat = null;
 
             boolean blocked = true;
 
-            for(OWLAxiom axiom: structure) {
-                if(axiom instanceof OWLClassAssertionAxiom) {
-                    classAssertion = (OWLClassAssertionAxiom) axiom;
+            for(OWLAxiom firstAxiom: structure) {
+                if(firstAxiom instanceof OWLClassAssertionAxiom) {
+                    classAssertion = (OWLClassAssertionAxiom) firstAxiom;
+
                     ce = classAssertion.getClassExpression();
                     individual = classAssertion.getIndividual();
 
                     if(individual.equals(node.getIndividual())) {
-                        parentClassAssertion = df.getOWLClassAssertionAxiom(ce, parentNode.getIndividual());
-                        if(!parentStructure.contains(parentClassAssertion)) {
-                            blocked = false;
-                            break;
+                        
+                        if(ce instanceof OWLObjectIntersectionOf) {
+                            ceFlat = ce.asConjunctSet();
+                        } else if(ce instanceof OWLObjectUnionOf) {
+                            ceFlat = ce.asDisjunctSet();
+                        } else {
+                            ceFlat = null;
                         }
+
+                        if(ceFlat != null) {
+                            blocked = false;
+                            for(OWLAxiom secondAxiom: parentStructure) {
+                                if(secondAxiom instanceof OWLClassAssertionAxiom) {
+                                    parentClassAssertion = (OWLClassAssertionAxiom) secondAxiom;
+                                    parentCe = parentClassAssertion.getClassExpression();
+                                    
+                                    if(parentCe instanceof OWLObjectIntersectionOf) {
+                                        parentCeFlat = parentCe.asConjunctSet();
+                                    } else if(parentCe instanceof OWLObjectUnionOf) {
+                                        parentCeFlat = parentCe.asDisjunctSet();
+                                    } else {
+                                        parentCeFlat = null;
+                                    }
+
+                                    if(parentCeFlat != null && parentCeFlat.equals(ceFlat)) {
+                                        blocked = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if(!blocked) {
+                                break;
+                            }
+                        } else {
+                            parentClassAssertion = df.getOWLClassAssertionAxiom(ce, parentNode.getIndividual());
+                            if(!parentStructure.contains(parentClassAssertion)) {
+                                blocked = false;
+                                break;
+                            }
+                        }
+
                     }
                 }
             }
