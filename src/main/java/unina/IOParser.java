@@ -305,7 +305,7 @@ public class IOParser extends JDialog implements ActionListener{
         io.loadOntology(filePath);
         List<OWLAxiom> tbox = io.getTbox();
 
-        // lettura e traduzione in concetto
+        //lettura e traduzione in concetto
         OWLClassExpression concept = io.readAndTraslateExpr();
 
         System.out.println("\n ------ TRANSLATED ------");

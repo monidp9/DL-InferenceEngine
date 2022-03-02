@@ -26,25 +26,32 @@
       <scope>test</scope>
     </dependency>
     
-    <!-- dependecy for OWL API -->
+    <!-- dependency for OWL API -->
     <dependency>
       <groupId>net.sourceforge.owlapi</groupId>
       <artifactId>owlapi-distribution</artifactId>
       <version>5.1.0</version>
     </dependency>
 
-    <!-- dependecy for JavaFX -->
+    <!-- dependency for JavaFX -->
     <dependency>
       <groupId>org.openjfx</groupId>
       <artifactId>javafx-controls</artifactId>
       <version>17.0.1</version>
     </dependency>
 
-    <!-- dependecy for Graphviz -->
+    <!-- dependency for Graphviz -->
     <dependency>
       <groupId>guru.nidi</groupId>
       <artifactId>graphviz-java</artifactId>
       <version>0.18.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.jena</groupId>
+      <artifactId>apache-jena-libs</artifactId>
+      <type>pom</type>
+      <version>4.4.0</version>
     </dependency>
 
   </dependencies>

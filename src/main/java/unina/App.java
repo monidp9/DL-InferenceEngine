@@ -5,6 +5,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.stream.Stream;
 
+import com.github.andrewoma.dexx.collection.HashMap;
+
+import org.apache.jena.rdf.model.*;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.vocabulary.*;
+
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.ManchesterSyntaxDocumentFormat;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
@@ -12,6 +19,7 @@ import org.semanticweb.owlapi.model.OWLOntologyManager;
 import guru.nidi.graphviz.attribute.*;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
+import guru.nidi.graphviz.model.Link;
 import guru.nidi.graphviz.model.MutableGraph;
 import guru.nidi.graphviz.model.MutableNode;
 
@@ -32,20 +40,35 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 public class App 
 {
     public static void main( String[] args ) throws Exception {
+
+        App app = new App();
+        app.createAnOntology();
+
+        Model model = ModelFactory.createDefaultModel();
+
+        String namespace = "http://example.org/";
+        String nodePrefix = namespace + "node#";
+
+        model.setNsPrefix("ex", namespace);
+
+        Resource x0 = model.createResource(nodePrefix + "x0");
+        Resource x1 = model.createResource(nodePrefix + "x1");
+        Resource x2 = model.createResource(nodePrefix + "x2");
+        Resource x3 = model.createResource(nodePrefix + "x3");
+
         
-        App app = new App();  
+        // x0.addProperty(model.createProperty(namespace, "labels"), "A and B");
+        // x0.addProperty(model.createProperty(namespace, "orEdge"), x1);
+        // x0.addProperty(model.createProperty(namespace, "orEdge"), x2);
+        
+        // x1.addProperty(model.createProperty(namespace, "labels"), "A or (B and D)");
 
-        // MutableGraph g = mutGraph("example1").setDirected(true).add(
-        //                  mutNode("a").add(Color.RED).addLink(mutNode("b")));
-        MutableGraph g = mutGraph("example").setDirected(true);
+        // x2.addProperty(model.createProperty(namespace, "labels"), "F");
+        // x2.addProperty(model.createProperty(namespace, "exEdge"), x3);
 
-        MutableNode a = mutNode("a");
-        MutableNode b = mutNode("b");
-        g.add(a);
+        FileOutputStream fileout = new FileOutputStream("result/tableau");
 
-        a.addLink(to(b).with(Label.of(" OR")));
-
-        Graphviz.fromGraph(g).width(200).render(Format.PNG).toFile(new File("result/ex1m.png"));
+        RDFDataMgr.write(fileout, model, Lang.TURTLE);
     }
 
     public void createAnOntology() throws Exception{
@@ -67,7 +90,8 @@ public class App
         OWLClass Person = df.getOWLClass(IOR + "#Person");
         OWLClass University = df.getOWLClass(IOR + "#University");
         OWLClass Course = df.getOWLClass(IOR + "#Course");
-    
+
+   
         OWLObjectProperty isEnrolledIn = df.getOWLObjectProperty(IOR + "#isEnrolledIn");
         OWLObjectProperty attends = df.getOWLObjectProperty(IOR + "#attends");
     
@@ -86,11 +110,11 @@ public class App
         OWLObjectUnionOf union = df.getOWLObjectUnionOf(operands);
 
         
-        IRI iri = IRI.create("https://protege.stanford.edu/ontologies/pizza/pizza.owl");
-        o = man.loadOntology(iri);
+        // IRI iri = IRI.create("https://protege.stanford.edu/ontologies/pizza/pizza.owl");
+        // o = man.loadOntology(iri);
 
-        File fileout = new File("pizza.man.owl");
-        man.saveOntology(o, new ManchesterSyntaxDocumentFormat(), new FileOutputStream(fileout));
+        // File fileout = new File("pizza.man.owl");
+        // man.saveOntology(o, new ManchesterSyntaxDocumentFormat(), new FileOutputStream(fileout));
     }
 
 
