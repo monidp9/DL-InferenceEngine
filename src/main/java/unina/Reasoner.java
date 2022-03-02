@@ -2,6 +2,9 @@ package unina;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.fasterxml.jackson.databind.PropertyName;
+
 import javafx.util.Pair;
 
 import java.io.File;
@@ -13,6 +16,7 @@ import org.semanticweb.owlapi.model.*;
 
 import guru.nidi.graphviz.attribute.*;
 import guru.nidi.graphviz.engine.*;
+import guru.nidi.graphviz.model.Link;
 import guru.nidi.graphviz.model.MutableGraph;
 import guru.nidi.graphviz.model.MutableNode;
 
@@ -60,8 +64,13 @@ public class Reasoner {
         }
 
         // inizializzazione grafo  
-        MutableNode n = mutNode(nodeId.toString());
+        MutableNode n = mutNode(nodeId.toString()); 
         nodeId++;
+
+        // setta etichette nodo padre
+        String label = getNodeLabel(node.getStructure());
+        MutableNode labelNode = mutNode(label).add(Shape.RECTANGLE); 
+        n.addLink(to(labelNode).with(Style.DASHED));
 
         graphNodes = new HashMap<Node, MutableNode>();
         graphNodes.put(node, n);
@@ -73,7 +82,7 @@ public class Reasoner {
 
         // rendering del grafo
         try {
-            Graphviz.fromGraph(graph).width(1000).render(Format.PNG).toFile(new File("result/ex1m.png"));
+            Graphviz.fromGraph(graph).width(10000).render(Format.PNG).toFile(new File("result/ex1m.png"));
         } catch(IOException e) {
             e.printStackTrace();
         }
@@ -93,6 +102,8 @@ public class Reasoner {
         Set<OWLAxiom> structureTmp = null;
         OWLClassExpression classExpression = null;
         OWLIndividual individual = null;
+        MutableNode mutNode, labelNode = null;
+        String label;
 
         // applica AND esaustivamente 
         do{    
@@ -129,26 +140,48 @@ public class Reasoner {
 
             // se la regola non viene applicata viene valutato il prossimo assioma.
             if (isAppliedRule){
+
                 node.setSx();
 
-                writeOnGraph(node, newNode, "OR");                
+                writeOnGraph(node, newNode, "⊔");                
+
+                if(!isClashFree(newNode.getStructure())){
+                    mutNode = graphNodes.get(newNode).add(Color.RED);
+                }
 
                 if (!isClashFree(newNode.getStructure()) || !dfs(newNode)) { 
                     // viene ripresa la struttura priva del primo disgiunto
+
+                    // setta etichette nodo sx dopo risalita
+                    mutNode = graphNodes.get(newNode);
+                    label = getNodeLabel(newNode.getStructure());
+                    labelNode = mutNode(label).add(Shape.RECTANGLE); 
+                    mutNode.addLink(to(labelNode).with(Style.DASHED));
 
                     newNode = new Node(node.getIndividual()); 
                     newNode.setStructure(new TreeSet<OWLAxiom>(structure));
 
                     isAppliedRule = handleUnionOf(classExpression, individual, node, newNode); 
                   
-                    writeOnGraph(node, newNode, "OR");
+                    writeOnGraph(node, newNode, "⊔");
+
+                    // setta etichette nodo dx prima della scesa 
+                    mutNode = graphNodes.get(newNode);
+                    label = getNodeLabel(newNode.getStructure());
+                    labelNode = mutNode(label).add(Shape.RECTANGLE); 
+                    mutNode.addLink(to(labelNode).with(Style.DASHED));
 
                     if (isClashFree(newNode.getStructure())){ 
                         return dfs(newNode);
                     } else {
+                        mutNode = graphNodes.get(newNode).add(Color.RED);
                         return false;
                     }                     
                 } else {
+                    mutNode = graphNodes.get(newNode);
+                    label = getNodeLabel(newNode.getStructure());
+                    labelNode = mutNode(label).add(Shape.RECTANGLE); 
+                    mutNode.addLink(to(labelNode).with(Style.DASHED));
                     return true;
                 }
             }
@@ -200,6 +233,10 @@ public class Reasoner {
                             }
                         }
                     }
+                    mutNode = graphNodes.get(newNode);
+                    label = getNodeLabel(newNode.getStructure());
+                    labelNode = mutNode(label).add(Shape.RECTANGLE); 
+                    mutNode.addLink(to(labelNode).with(Style.DASHED));
                     
                     if (isClashFree(newNode.getStructure())){ 
                         node.setSx();
@@ -209,13 +246,16 @@ public class Reasoner {
                         }
                         isAppliedRule = false;
                     } else {
+                        mutNode = graphNodes.get(node).add(Color.RED);
                         return false;
                     }
                 }
             }
         } else {
+            mutNode = graphNodes.get(node).add(Color.RED);
             return false;
         }
+
         return true;
     } 
 
@@ -881,15 +921,169 @@ public class Reasoner {
         return concept;
     }
 
-     // ----------------------------------------------------------- utility ----------------------------------------------------------- //
+     // ----------------------------------------------------------- graph drawing ----------------------------------------------------------- //
 
      private void writeOnGraph(Node node, Node child, String rule) {
         MutableNode mutNode = graphNodes.get(node);
         MutableNode mutChild = mutNode(nodeId.toString());
-
+     
         mutNode.addLink(to(mutChild).with(Label.of(" " + rule)));
         graphNodes.put(child, mutChild);
 
         nodeId++;
      }
+
+     private String getNodeLabel(Set<OWLAxiom> structure){
+        OWLClassExpression classExpression;
+        String label = null;
+
+        for(OWLAxiom axiom : structure){
+            if (axiom instanceof OWLClassAssertionAxiom){ 
+                classExpression = ((OWLClassAssertionAxiom) axiom).getClassExpression();
+                Container<String> labelContainer = new Container<>("");
+                createLabel(classExpression, labelContainer);
+
+                if(label == null){
+                    label = labelContainer.getValue();
+                } else {
+                    label = label + "\n" + labelContainer.getValue();
+
+                }
+            }
+        }
+/*
+        int labelSize = label.length();
+        int count = 0;
+        String newLabel = "";
+
+        while(labelSize>0){
+            if(labelSize < count){
+                newLabel = newLabel + label.substring(count, label.length()) + "\n";
+            } else {
+                newLabel = newLabel + label.substring(count, count+15) + "\n";
+            }
+            count+=15;
+            labelSize-= 15;
+        }
+*/
+
+        return label;
+     }
+
+    private void createLabel(OWLClassExpression C, Container<String> labelContainer) {
+        /* 
+         *
+         */
+
+        String label = null, conceptName = null; 
+
+        if(C instanceof OWLClass){
+            label = labelContainer.getValue();
+            conceptName = getConceptName((OWLClass) C);
+            labelContainer.setValue(label + conceptName);
+        } else if (C instanceof OWLObjectComplementOf){
+            label = labelContainer.getValue();
+            OWLClassExpression ce = ((OWLObjectComplementOf) C).getOperand();
+
+            if(ce instanceof OWLClass){
+                conceptName = getConceptName((OWLClass) ce);                
+                labelContainer.setValue(label + "¬" + conceptName);
+            } else {
+                Container<String> manageComplementOf =  new Container<>("");
+                createLabel(C,manageComplementOf);
+                labelContainer.setValue(label + "¬(" + manageComplementOf.getValue() + ")");   
+            }
+        }
+
+        
+        if(C instanceof OWLObjectIntersectionOf){
+            C.accept(new OWLClassExpressionVisitor() {
+                @Override
+                public void visit(OWLObjectIntersectionOf oi) {
+                    String label = labelContainer.getValue() + "(";
+                    labelContainer.setValue(label);
+
+                    OWLClassExpression ceSx =  oi.getOperandsAsList().get(0);
+                    createLabel(ceSx, labelContainer);
+                    label = labelContainer.getValue() + " ⊓ "; 
+                    labelContainer.setValue(label);
+
+                    OWLClassExpression ceDx =  oi.getOperandsAsList().get(1);
+                    createLabel(ceDx, labelContainer);
+                    label = labelContainer.getValue() + ")"; 
+                    labelContainer.setValue(label);
+                }
+            });
+        }
+        if(C instanceof OWLObjectUnionOf){
+            C.accept(new OWLClassExpressionVisitor() {
+                @Override
+                public void visit(OWLObjectUnionOf ou) {
+                    String label = labelContainer.getValue() + "(";
+                    labelContainer.setValue(label);
+
+                    OWLClassExpression ceSx =  ou.getOperandsAsList().get(0);
+                    createLabel(ceSx, labelContainer);
+                    label = labelContainer.getValue() + " ⊔ "; 
+                    labelContainer.setValue(label);
+
+                    OWLClassExpression ceDx =  ou.getOperandsAsList().get(1);
+                    createLabel(ceDx, labelContainer);
+                    label = labelContainer.getValue() + ")";
+                    labelContainer.setValue(label);
+                }
+            });
+        }
+        if(C instanceof OWLObjectSomeValuesFrom){
+            C.accept(new OWLClassExpressionVisitor() {
+                @Override
+                public void visit(OWLObjectSomeValuesFrom svf) {
+                    String propertyName = getPropertyName(svf.getProperty());
+
+                    String label = labelContainer.getValue() + " ∃" + propertyName + ".";
+                    labelContainer.setValue(label);
+
+                    createLabel(svf.getFiller(), labelContainer);
+                    label = labelContainer.getValue() + " "; 
+                    labelContainer.setValue(label);
+
+                }
+            });
+        }
+        if(C instanceof OWLObjectAllValuesFrom){
+            C.accept(new OWLClassExpressionVisitor() {
+                @Override
+                public void visit(OWLObjectAllValuesFrom avf) {
+                    String propertyName = getPropertyName(avf.getProperty());
+
+                    String label = labelContainer.getValue() + " ∀" + propertyName + ".";
+                    labelContainer.setValue(label);
+
+                    createLabel(avf.getFiller(), labelContainer);
+                    label = labelContainer.getValue() + " "; 
+                    labelContainer.setValue(label);
+                }
+            });
+        }
+    }
+     
+    private String getConceptName(OWLClass C){
+        String concept = C.toStringID();
+        int hashMarkIndex = concept.indexOf("#");
+        String conceptName = concept.substring(hashMarkIndex+1, hashMarkIndex+4); 
+
+        if(conceptName.equals("Nothing")){
+            conceptName = "⊥";
+        } else if(conceptName.equals("Thing")){
+            conceptName = "⊤";
+        }
+        return conceptName;
+    }
+
+    private String getPropertyName(OWLObjectPropertyExpression R){
+        String property = R.toString();
+        int hashMarkIndex = property.indexOf("#");
+        String propertyName = property.substring(hashMarkIndex+1, hashMarkIndex+4); //property.length()-1
+        return propertyName;
+    }
 }
