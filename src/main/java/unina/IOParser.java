@@ -7,14 +7,16 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.stream.Collectors;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.plaf.metal.OceanTheme;
 
 import java.awt.event.*;
-
+import java.awt.image.BufferedImage;
 import java.util.*;
 
+import org.apache.jena.sparql.function.library.print;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.expression.ShortFormEntityChecker;
 import org.semanticweb.owlapi.manchestersyntax.renderer.ManchesterOWLSyntaxPrefixNameShortFormProvider;
@@ -26,9 +28,11 @@ import org.semanticweb.owlapi.util.ShortFormProvider;
 import org.semanticweb.owlapi.util.mansyntax.ManchesterOWLSyntaxParser;
 
 import javafx.application.Platform;
+import javafx.stage.Window;
+import unina.view.View;
 
 
-public class IOParser extends JDialog implements ActionListener{
+public class IOParser {
 
     /*
      * Effettua il parsing di una stringa in Manchester Syntax presa in input,
@@ -39,11 +43,9 @@ public class IOParser extends JDialog implements ActionListener{
     private OWLOntology o;
     private OWLOntologyManager man;
 
-    private String expr;
-    private OWLClassExpression concept;
+    private OWLClassExpression concept = null;
+    private View view;
 
-    private JTextArea t;
-    private JDialog d;
 
     public IOParser() {
         man = OWLManager.createOWLOntologyManager();  
@@ -52,140 +54,6 @@ public class IOParser extends JDialog implements ActionListener{
     public  List<OWLAxiom> getTbox() {
         List<OWLAxiom> axioms = o.logicalAxioms().collect(Collectors.toList());
         return axioms;
-    }
-
-    public OWLClassExpression readAndTraslateExpr() {
-
-        /*
-         * Gestisce la GUI per l'inserimento dell'espressione in Manchester
-         * Syntax e attende che l'utente completi l'operazione prima di 
-         * restituire il concetto.
-         */
-
-        t = new JTextArea();
-        d = new JDialog();
-
-        d.setTitle("Enter your concept (Manchester Syntax)");
-
-        try {
-            UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-            MetalLookAndFeel.setCurrentTheme(new OceanTheme());
-        }
-        catch (Exception e) { e.printStackTrace(); }
-
-        JMenuBar mb = new JMenuBar();
-
-        JMenu m1 = new JMenu("File");
-
-        JMenuItem mi1 = new JMenuItem("Save");
-        JMenuItem mi2 = new JMenuItem("Done");
-        JMenuItem mi3 = new JMenuItem("Close");
-        JMenuItem mi4 = new JMenuItem("Open");
-
-        mi1.addActionListener(this);
-        mi2.addActionListener(this);
-        mi3.addActionListener(this);
-        mi4.addActionListener(this);
-
-        m1.add(mi1);
-        m1.add(mi4);
-        
-        mb.add(m1);
-        mb.add(mi2);
-        mb.add(mi3);
-
-        d.add(t);
-        d.setJMenuBar(mb);
-
-        d.setSize(600, 300);
-        d.setLocationRelativeTo(null);
-        d.setModal(true);
-        d.setVisible(true);
-
-        return concept;
-    }
-    
-    public void actionPerformed(ActionEvent e) {
-        
-        /*
-         * Implementa le azioni da fare una volta che l'utente interagisce
-         * con la GUI.
-         */
-
-        String s = e.getActionCommand();
-
-        if(s.equals("Save")) {
-            JFileChooser j = new JFileChooser("f:");
- 
-            // invoca uno dialog per il salvataggio
-            int r = j.showSaveDialog(null);
- 
-            if (r == JFileChooser.APPROVE_OPTION) {
-                File fi = new File(j.getSelectedFile().getAbsolutePath());
-                try {
-                    FileWriter wr = new FileWriter(fi, false);
-                    BufferedWriter w = new BufferedWriter(wr);
- 
-                    w.write(t.getText()); 
-                    w.flush();
-                    w.close();
-                }
-                catch (Exception evt) {
-                    JOptionPane.showMessageDialog(d, evt.getMessage());
-                }
-            }
-            // se l'utente cancella l'operazione
-            else {
-                JOptionPane.showMessageDialog(d, "the user cancelled the operation");
-            }
-        } else if(s.equals("Done")) {
-            expr = t.getText();
-
-            try {
-                fromExprToConcept();
-            } catch (ParserException ex) {
-                JOptionPane.showMessageDialog(d, "Manchester syntax error.", "ERROR", JOptionPane.ERROR_MESSAGE);
-                System.exit(1);
-            } finally {
-                JOptionPane.showMessageDialog(d, "Concept traslated.", "SUCCESS", JOptionPane.INFORMATION_MESSAGE);
-            }
-            
-            d.setModal(false);
-            d.setVisible(false);
-            Platform.exit();
-        } else if(s.equals("Close")) {
-            d.setModal(false);
-            d.setVisible(false);
-            System.exit(0);
-        } else if(s.equals("Open")) {
-            JFileChooser j = new JFileChooser("f:");
-            int r = j.showOpenDialog(null);
- 
-            if (r == JFileChooser.APPROVE_OPTION) {
-                File fi = new File(j.getSelectedFile().getAbsolutePath());
- 
-                try {
-                    String s1 = "", sl = "";
-
-                    FileReader fr = new FileReader(fi);
-                    BufferedReader br = new BufferedReader(fr);
- 
-                    sl = br.readLine();
- 
-                    while ((s1 = br.readLine()) != null) {
-                        sl = sl + "\n" + s1;
-                    }
- 
-                    t.setText(sl);
-                    br.close();
-                }
-                catch (Exception evt) {
-                    JOptionPane.showMessageDialog(d, evt.getMessage());
-                }
-            }
-            else
-                JOptionPane.showMessageDialog(d, "the user cancelled the operation");
-        }
     }
 
     public void loadOntology(String filePath) {
@@ -202,7 +70,7 @@ public class IOParser extends JDialog implements ActionListener{
         }
     }
 
-    private void fromExprToConcept() {
+    public void fromExprToConcept(String expr) {
 
         /*
          * Converte l'espressione attributo della classe in un concetto
@@ -246,9 +114,7 @@ public class IOParser extends JDialog implements ActionListener{
            public void visit(OWLObjectIntersectionOf objIn) {
                List<OWLClassExpression> l = objIn.getOperandsAsList();
                if(l.size() > 2) {
-                   JOptionPane.showMessageDialog(d, "Logical operators (and, or) are expected to be binary",
-                                                 "ERROR", JOptionPane.ERROR_MESSAGE);
-                   System.exit(1);
+                view.showError("Logical operators (and, or) are expected to be binary");
                 }
                for(OWLClassExpression ce: l) {
                    if(ce instanceof OWLObjectIntersectionOf || 
@@ -264,9 +130,7 @@ public class IOParser extends JDialog implements ActionListener{
            public void visit(OWLObjectUnionOf objUn) {
               List<OWLClassExpression> l = objUn.getOperandsAsList();
                if(l.size() > 2) {
-                  JOptionPane.showMessageDialog(d, "Logical operators (and, or) are expected to be binary",
-                                                "ERROR", JOptionPane.ERROR_MESSAGE);
-                  System.exit(1);
+                view.showError("Logical operators (and, or) are expected to be binary");
                 }
               for(OWLClassExpression ce: l) {
                   if(ce instanceof OWLObjectIntersectionOf || 
@@ -294,19 +158,32 @@ public class IOParser extends JDialog implements ActionListener{
         return concept;
     }
 
+    public void setView(View view){
+        this.view = view;
+    }
+
+    public OWLClassExpression getConcept() {
+        return concept;
+    }
 
     public static void main(String[] args) {    
 
         IOParser io = new IOParser();
         Reasoner reasoner = new Reasoner();
+        View view = new View();
+        io.setView(view);
 
         // caricamento TBox
         String filePath = "ontologie/foodeasy.man.owl";
         io.loadOntology(filePath);
         List<OWLAxiom> tbox = io.getTbox();
+                
 
         //lettura e traduzione in concetto
-        OWLClassExpression concept = io.readAndTraslateExpr();
+        view.openConceptReadingView(io);
+
+        OWLClassExpression concept = io.getConcept();
+
 
         System.out.println("\n ------ TRANSLATED ------");
         System.out.println("\nCONCEPT: \n" + concept + "\n");
@@ -315,7 +192,8 @@ public class IOParser extends JDialog implements ActionListener{
         reasoner.setTbox(tbox);
         
         System.out.println("\nTABLEAUX : "+reasoner.reasoning(concept));
-    
-        System.exit(0);
+
+        view.openGraphView();
     }
+
 }

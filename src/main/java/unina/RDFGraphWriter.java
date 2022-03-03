@@ -3,6 +3,7 @@ package unina;
 import java.io.*;
 import java.util.*;
 
+import org.apache.jena.base.Sys;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.*;
 import org.semanticweb.owlapi.model.*;
@@ -248,7 +249,6 @@ public class RDFGraphWriter {
             e.printStackTrace();
         }
     }
-
     public void setNodeColor(Node newNode, String color) {
         if(color.equals("red")){
             graphNodes.get(newNode).add(Color.RED);

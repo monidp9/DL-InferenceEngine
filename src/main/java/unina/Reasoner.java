@@ -210,7 +210,7 @@ public class Reasoner {
                         isAppliedRule = false;
                     } else {
                         rdfGraphWriter.setNodeLabel(node, newNode, false);
-                        rdfGraphWriter.setNodeColor(node,"red");
+                        rdfGraphWriter.setNodeColor(newNode,"red");
                         return false;
                     }
                 }
