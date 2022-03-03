@@ -2,8 +2,8 @@ package unina;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javafx.util.Pair;
 
+import javafx.util.Pair;
 import java.util.*;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
@@ -18,8 +18,7 @@ public class Reasoner {
     private List<OWLAxiom> tbox = null; 
     private OWLClassExpression tboxInConcept = null; // o Tg in caso di lazy unfolding
     private boolean useLazyUnfolding = false;
-
-    private RDFGraphWriter rdfGraphWriter;
+    private RDFGraphWriter rdfGraphWriter = new RDFGraphWriter();
 
     // ----------------------------------------------------------- reasoning ----------------------------------------------------------- //
 
@@ -48,11 +47,14 @@ public class Reasoner {
             structure.add(df.getOWLClassAssertionAxiom(translatedTbox, x0));
         }
 
-        rdfGraphWriter = new RDFGraphWriter();
+        rdfGraphWriter.initRDF();
+        rdfGraphWriter.initGraph(node);
+        rdfGraphWriter.setNodeLabel(node);
 
         boolean sat = dfs(node);
 
-        rdfGraphWriter.saveRDF("result/tableau");
+        rdfGraphWriter.renderRDF("result/tableau_rdf");
+        rdfGraphWriter.renderGraph("result/tableau_graph");
 
         return sat;
     }
@@ -106,24 +108,40 @@ public class Reasoner {
 
             // se la regola non viene applicata viene valutato il prossimo assioma.
             if (isAppliedRule){
+
                 node.setSx();
                 rdfGraphWriter.addRDFTriple(node, "orEdge", newNode);
 
+                rdfGraphWriter.writeOnGraph(node, newNode, "⊔");                
+
+                if(!isClashFree(newNode.getStructure())){
+                    rdfGraphWriter.setNodeColor(newNode, "red");
+                }
+
                 if (!isClashFree(newNode.getStructure()) || !dfs(newNode)) { 
                     // viene ripresa la struttura priva del primo disgiunto
+
+                    // setta etichette nodo sx dopo risalita
+                    rdfGraphWriter.setNodeLabel(newNode);
 
                     newNode = new Node(node.getIndividual()); 
                     newNode.setStructure(new TreeSet<OWLAxiom>(structure));
 
                     isAppliedRule = handleUnionOf(classExpression, individual, node, newNode); 
-                    
-                    rdfGraphWriter.addRDFTriple(node, "orEdge", newNode);
+                  
+                    rdfGraphWriter.writeOnGraph(node, newNode, "⊔");                
+
+                    // setta etichette nodo dx prima della scesa 
+                    rdfGraphWriter.setNodeLabel(newNode);
+
                     if (isClashFree(newNode.getStructure())){ 
                         return dfs(newNode);
                     } else {
+                        rdfGraphWriter.setNodeColor(newNode, "red");
                         return false;
                     }                     
                 } else {
+                    rdfGraphWriter.setNodeLabel(newNode);
                     return true;
                 }
             }
@@ -142,8 +160,6 @@ public class Reasoner {
                 }
             }
         } while(isAppliedRule);
-
-        rdfGraphWriter.addRDFTriple(node, "labels", "(A and B) or C");
 
         // applica ESISTENZIALE
         if(isClashFree(structure)) { 
@@ -166,7 +182,7 @@ public class Reasoner {
                 }
 
                 if (isAppliedRule){
-                    rdfGraphWriter.addRDFTriple(node, "exEdge", newNode);
+                    rdfGraphWriter.writeOnGraph(node, newNode, "∃");                
 
                     // applica UNIVERSALE esaustivamente
                     for (OWLAxiom secondAxiom : structureTmp) {
@@ -177,6 +193,7 @@ public class Reasoner {
                             }
                         }
                     }
+                    rdfGraphWriter.setNodeLabel(newNode);
                     
                     if (isClashFree(newNode.getStructure())){ 
                         node.setSx();
@@ -186,13 +203,16 @@ public class Reasoner {
                         }
                         isAppliedRule = false;
                     } else {
+                        rdfGraphWriter.setNodeColor(node,"red");
                         return false;
                     }
                 }
             }
         } else {
+            rdfGraphWriter.setNodeColor(node, "red");
             return false;
         }
+        rdfGraphWriter.setNodeColor(node, "green");
         return true;
     } 
 
