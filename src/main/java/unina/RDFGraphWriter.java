@@ -19,7 +19,7 @@ public class RDFGraphWriter {
     private HashMap<Node, MutableNode> graphNodes = new HashMap<>();
     private MutableGraph graph; 
 
-    // ########## RDF ##########
+    // ----------------------------------------------------------- rdf ----------------------------------------------------------- //
 
     public void initRDF() {
         model = ModelFactory.createDefaultModel();
@@ -64,7 +64,7 @@ public class RDFGraphWriter {
         }   
     }
 
-    // ######### GRAPH #########
+    // ----------------------------------------------------------- graph ----------------------------------------------------------- //
 
     public void initGraph(Node node){
         MutableNode n = mutNode(node.getId().toString()); 
@@ -76,6 +76,7 @@ public class RDFGraphWriter {
 
     public void writeOnGraph(Node node, Node child, String rule) {        
         MutableNode mutableNode = graphNodes.get(node);
+
         MutableNode mutChild = mutNode(child.getId().toString());
         
         mutableNode.addLink(to(mutChild).with(Label.of(" " + rule)));
@@ -203,7 +204,7 @@ public class RDFGraphWriter {
     private String getConceptName(OWLClass C){
         String concept = C.toStringID();
         int hashMarkIndex = concept.indexOf("#");
-        String conceptName = concept.substring(hashMarkIndex+1, hashMarkIndex+4); 
+        String conceptName = concept.substring(hashMarkIndex+1); //, hashMarkIndex+4); 
 
         if(conceptName.equals("Nothing")){
             conceptName = "⊥";
@@ -220,12 +221,24 @@ public class RDFGraphWriter {
         return propertyName;
     }
 
-    public void setNodeLabel(Node node){
-
-        //MutableNode n = mutNode(node.getId().toString()); 
+    public void setNodeLabel(Node parent, Node node, boolean color){
         MutableNode n = graphNodes.get(node);
-        String label = getLabel(node.getStructure());
-        MutableNode labelNode = mutNode(label).add(Shape.RECTANGLE); 
+        Set<OWLAxiom> nodeStructure = node.getStructure();
+        Set<OWLAxiom> axiomDifference = new TreeSet<>(nodeStructure);
+        MutableNode labelNode;
+
+        if(parent != null){
+            Set<OWLAxiom> parentStructure = parent.getStructure();
+            axiomDifference.removeAll(parentStructure);
+        }
+
+        String nodeLabel = getLabel(axiomDifference);
+
+        if(color){
+            labelNode = mutNode(nodeLabel + "\n(LU "+node.getId()+")").add(Shape.RECTANGLE, Color.BLUE); 
+        } else {
+            labelNode = mutNode(nodeLabel + "\n("+ node.getId()+")").add(Shape.RECTANGLE); 
+        }
         n.addLink(to(labelNode).with(Style.DASHED));
     }
 

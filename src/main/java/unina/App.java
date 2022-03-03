@@ -1,29 +1,17 @@
 package unina;
 
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.util.stream.Stream;
 
-import com.github.andrewoma.dexx.collection.HashMap;
 
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.vocabulary.*;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.formats.ManchesterSyntaxDocumentFormat;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 
-import guru.nidi.graphviz.attribute.*;
-import guru.nidi.graphviz.engine.Format;
-import guru.nidi.graphviz.engine.Graphviz;
-import guru.nidi.graphviz.model.Link;
-import guru.nidi.graphviz.model.MutableGraph;
-import guru.nidi.graphviz.model.MutableNode;
-
-import static guru.nidi.graphviz.model.Factory.*;
 
 import org.semanticweb.owlapi.model.IRI;
 
@@ -47,14 +35,9 @@ public class App
         Model model = ModelFactory.createDefaultModel();
 
         String namespace = "http://example.org/";
-        String nodePrefix = namespace + "node#";
 
         model.setNsPrefix("ex", namespace);
 
-        Resource x0 = model.createResource(nodePrefix + "x0");
-        Resource x1 = model.createResource(nodePrefix + "x1");
-        Resource x2 = model.createResource(nodePrefix + "x2");
-        Resource x3 = model.createResource(nodePrefix + "x3");
 
         
         // x0.addProperty(model.createProperty(namespace, "labels"), "A and B");
@@ -104,7 +87,6 @@ public class App
     
 
         Stream<OWLClassExpression> operands3 = Stream.of(Person, attendsC);
-        OWLObjectUnionOf union3 = df.getOWLObjectUnionOf(operands3);
 
         Stream<OWLClassExpression> operands = Stream.of(Person, enrollU);
         OWLObjectUnionOf union = df.getOWLObjectUnionOf(operands);

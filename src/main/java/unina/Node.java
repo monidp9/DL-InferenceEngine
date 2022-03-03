@@ -15,7 +15,7 @@ public class Node {
     
     private boolean blocked = false;
     private boolean sx = false;
-
+    private Node parentOnGraph = null;
     private Integer id = 0;
     private static Integer counterId = 0;
 
@@ -36,6 +36,10 @@ public class Node {
         this.parent = ptr;
     }
 
+    public void setParentOnGraph(Node ptr) {
+        this.parentOnGraph = ptr;
+    }
+
     public void setSx(){
         this.sx = true;
     }
@@ -50,6 +54,10 @@ public class Node {
 
     public Node getParent() {
         return parent;
+    }
+
+    public Node getParentOnGraph() {
+        return parentOnGraph;
     }
 
     public boolean getSx(){
