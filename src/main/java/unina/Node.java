@@ -14,7 +14,9 @@ public class Node {
     private OWLIndividual x;
     private boolean blocked = false;
     private boolean sx = false;
-    private static Integer id = 0;
+    private Node parentOnGraph = null;
+    private Integer id = 0;
+    private static Integer counterId = 0;
 
     public Node(OWLIndividual x){
         this.structure = new TreeSet <OWLAxiom>();
@@ -33,6 +35,10 @@ public class Node {
         this.parent = ptr;
     }
 
+    public void setParentOnGraph(Node ptr) {
+        this.parentOnGraph = ptr;
+    }
+
     public void setSx(){
         this.sx = true;
     }
@@ -49,6 +55,10 @@ public class Node {
         return parent;
     }
 
+    public Node getParentOnGraph() {
+        return parentOnGraph;
+    }
+
     public boolean getSx(){
         return this.sx;
     }
@@ -58,10 +68,10 @@ public class Node {
     }
 
     public Integer getId() {
+        if(id == 0) {
+            counterId++;
+            id = counterId;
+        }
         return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
     }
 }

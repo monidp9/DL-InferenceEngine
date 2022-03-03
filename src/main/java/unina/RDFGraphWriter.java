@@ -3,7 +3,6 @@ package unina;
 import java.io.*;
 import java.util.*;
 
-import org.apache.jena.base.Sys;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.*;
 import org.semanticweb.owlapi.model.*;
@@ -76,7 +75,6 @@ public class RDFGraphWriter {
 
     public void writeOnGraph(Node node, Node child, String rule) {
         MutableNode mutableNode = graphNodes.get(node);
-        child.setId(node.getId()+1);
 
         MutableNode mutChild = mutNode(child.getId().toString());
         
@@ -205,7 +203,7 @@ public class RDFGraphWriter {
     private String getConceptName(OWLClass C){
         String concept = C.toStringID();
         int hashMarkIndex = concept.indexOf("#");
-        String conceptName = concept.substring(hashMarkIndex+1, hashMarkIndex+4); 
+        String conceptName = concept.substring(hashMarkIndex+1); //, hashMarkIndex+4); 
 
         if(conceptName.equals("Nothing")){
             conceptName = "⊥";
@@ -222,10 +220,11 @@ public class RDFGraphWriter {
         return propertyName;
     }
 
-    public void setNodeLabel(Node parent, Node node){
+    public void setNodeLabel(Node parent, Node node, boolean color){
         MutableNode n = graphNodes.get(node);
         Set<OWLAxiom> nodeStructure = node.getStructure();
         Set<OWLAxiom> axiomDifference = new TreeSet<>(nodeStructure);
+        MutableNode labelNode;
 
         if(parent != null){
             Set<OWLAxiom> parentStructure = parent.getStructure();
@@ -233,10 +232,12 @@ public class RDFGraphWriter {
         }
 
         String nodeLabel = getLabel(axiomDifference);
-        System.out.println("id : " + node.getId());
-        System.out.println(nodeLabel + "\n\n");
 
-        MutableNode labelNode = mutNode(nodeLabel).add(Shape.RECTANGLE); 
+        if(color){
+            labelNode = mutNode(nodeLabel + "\n(LU "+node.getId()+")").add(Shape.RECTANGLE, Color.BLUE); 
+        } else {
+            labelNode = mutNode(nodeLabel + "\n("+ node.getId()+")").add(Shape.RECTANGLE); 
+        }
         n.addLink(to(labelNode).with(Style.DASHED));
     }
 
