@@ -15,6 +15,7 @@ public class Node {
     private boolean blocked = false;
     private boolean sx = false;
     private Integer id = 0;
+    private static Integer counterId = 0;
 
     public Node(OWLIndividual x){
         this.structure = new TreeSet <OWLAxiom>();
@@ -58,10 +59,10 @@ public class Node {
     }
 
     public Integer getId() {
+        if(id == 0) {
+            counterId++;
+            id = counterId;
+        }
         return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
     }
 }
