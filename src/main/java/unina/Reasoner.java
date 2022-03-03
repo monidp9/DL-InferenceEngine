@@ -52,6 +52,8 @@ public class Reasoner {
 
         boolean sat = dfs(node);
 
+        rdfGraphWriter.saveRDF("result/tableau");
+
         return sat;
     }
 
@@ -105,6 +107,7 @@ public class Reasoner {
             // se la regola non viene applicata viene valutato il prossimo assioma.
             if (isAppliedRule){
                 node.setSx();
+                rdfGraphWriter.addRDFTriple(node, "orEdge", newNode);
 
                 if (!isClashFree(newNode.getStructure()) || !dfs(newNode)) { 
                     // viene ripresa la struttura priva del primo disgiunto
@@ -113,7 +116,8 @@ public class Reasoner {
                     newNode.setStructure(new TreeSet<OWLAxiom>(structure));
 
                     isAppliedRule = handleUnionOf(classExpression, individual, node, newNode); 
-                  
+                    
+                    rdfGraphWriter.addRDFTriple(node, "orEdge", newNode);
                     if (isClashFree(newNode.getStructure())){ 
                         return dfs(newNode);
                     } else {
