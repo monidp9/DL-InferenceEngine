@@ -301,7 +301,7 @@ public class IOParser extends JDialog implements ActionListener{
         Reasoner reasoner = new Reasoner();
 
         // caricamento TBox
-        String filePath = "ontologie/foodeasy.man.owl";
+        String filePath = "ontologie/food.man.owl";
         io.loadOntology(filePath);
         List<OWLAxiom> tbox = io.getTbox();
 
