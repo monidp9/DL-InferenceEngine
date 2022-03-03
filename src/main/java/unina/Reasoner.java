@@ -70,8 +70,11 @@ public class Reasoner {
 
         Set<OWLAxiom> structure = node.getStructure();
         Set<OWLAxiom> structureTmp = null;
+
         OWLClassExpression classExpression = null;
         OWLIndividual individual = null;
+
+        String label;
 
         // applica AND esaustivamente 
         do{    
@@ -108,10 +111,9 @@ public class Reasoner {
 
             // se la regola non viene applicata viene valutato il prossimo assioma.
             if (isAppliedRule){
-
                 node.setSx();
-                rdfGraphWriter.addRDFTriple(node, "orEdge", newNode);
 
+                rdfGraphWriter.addRDFTriple(node, "orEdge", newNode);
                 rdfGraphWriter.writeOnGraph(node, newNode, "⊔");                
 
                 if(!isClashFree(newNode.getStructure())){
@@ -129,6 +131,7 @@ public class Reasoner {
 
                     isAppliedRule = handleUnionOf(classExpression, individual, node, newNode); 
                   
+                    rdfGraphWriter.addRDFTriple(node, "orEdge", newNode);
                     rdfGraphWriter.writeOnGraph(node, newNode, "⊔");                
 
                     // setta etichette nodo dx prima della scesa 
@@ -137,10 +140,14 @@ public class Reasoner {
                     if (isClashFree(newNode.getStructure())){ 
                         return dfs(newNode);
                     } else {
+                        // label = rdfGraphWriter.getLabel(newNode.getStructure());
+                        // rdfGraphWriter.addRDFTriple(newNode, "labels", label);
                         rdfGraphWriter.setNodeColor(newNode, "red");
                         return false;
                     }                     
                 } else {
+                    // label = rdfGraphWriter.getLabel(newNode.getStructure());
+                    // rdfGraphWriter.addRDFTriple(newNode, "labels", label);
                     rdfGraphWriter.setNodeLabel(newNode);
                     return true;
                 }
@@ -176,12 +183,12 @@ public class Reasoner {
                         newNode.setStructure(new TreeSet<OWLAxiom>(structure)); 
 
                         individual = ((OWLClassAssertionAxiom) firstAxiom).getIndividual();
-
                         isAppliedRule = handleSomeValuesFrom(classExpression, individual, node, newNode);
                     }
                 }
 
                 if (isAppliedRule){
+                    rdfGraphWriter.addRDFTriple(node, "exEdge", newNode);
                     rdfGraphWriter.writeOnGraph(node, newNode, "∃");                
 
                     // applica UNIVERSALE esaustivamente
@@ -203,15 +210,21 @@ public class Reasoner {
                         }
                         isAppliedRule = false;
                     } else {
+                        // label = rdfGraphWriter.getLabel(node.getStructure());
+                        // rdfGraphWriter.addRDFTriple(node, "labels", label);
                         rdfGraphWriter.setNodeColor(node,"red");
                         return false;
                     }
                 }
             }
         } else {
+            // label = rdfGraphWriter.getLabel(node.getStructure());
+            // rdfGraphWriter.addRDFTriple(node, "labels", label);
             rdfGraphWriter.setNodeColor(node, "red");
             return false;
         }
+        // label = rdfGraphWriter.getLabel(node.getStructure());
+        // rdfGraphWriter.addRDFTriple(node, "labels", label);
         rdfGraphWriter.setNodeColor(node, "green");
         return true;
     } 
