@@ -3,6 +3,7 @@ package unina;
 import java.io.*;
 import java.util.*;
 
+import org.apache.jena.base.Sys;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.*;
 import org.semanticweb.owlapi.model.*;
@@ -19,7 +20,7 @@ public class RDFGraphWriter {
     private HashMap<Node, MutableNode> graphNodes = new HashMap<>();
     private MutableGraph graph; 
 
-    // ########## RDF ##########
+    // ----------------------------------------------------------- rdf ----------------------------------------------------------- //
 
     public void initRDF() {
         model = ModelFactory.createDefaultModel();
@@ -63,7 +64,7 @@ public class RDFGraphWriter {
         }   
     }
 
-    // ######### GRAPH #########
+    // ----------------------------------------------------------- graph ----------------------------------------------------------- //
 
     public void initGraph(Node node){
         MutableNode n = mutNode(node.getId().toString()); 
@@ -75,6 +76,8 @@ public class RDFGraphWriter {
 
     public void writeOnGraph(Node node, Node child, String rule) {
         MutableNode mutableNode = graphNodes.get(node);
+        child.setId(node.getId()+1);
+
         MutableNode mutChild = mutNode(child.getId().toString());
         
         mutableNode.addLink(to(mutChild).with(Label.of(" " + rule)));
@@ -219,12 +222,21 @@ public class RDFGraphWriter {
         return propertyName;
     }
 
-    public void setNodeLabel(Node node){
-
-        //MutableNode n = mutNode(node.getId().toString()); 
+    public void setNodeLabel(Node parent, Node node){
         MutableNode n = graphNodes.get(node);
-        String label = getLabel(node.getStructure());
-        MutableNode labelNode = mutNode(label).add(Shape.RECTANGLE); 
+        Set<OWLAxiom> nodeStructure = node.getStructure();
+        Set<OWLAxiom> axiomDifference = new TreeSet<>(nodeStructure);
+
+        if(parent != null){
+            Set<OWLAxiom> parentStructure = parent.getStructure();
+            axiomDifference.removeAll(parentStructure);
+        }
+
+        String nodeLabel = getLabel(axiomDifference);
+        System.out.println("id : " + node.getId());
+        System.out.println(nodeLabel + "\n\n");
+
+        MutableNode labelNode = mutNode(nodeLabel).add(Shape.RECTANGLE); 
         n.addLink(to(labelNode).with(Style.DASHED));
     }
 

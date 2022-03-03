@@ -14,7 +14,7 @@ public class Node {
     private OWLIndividual x;
     private boolean blocked = false;
     private boolean sx = false;
-    private Integer id = 0;
+    private static Integer id = 0;
 
     public Node(OWLIndividual x){
         this.structure = new TreeSet <OWLAxiom>();

@@ -49,7 +49,7 @@ public class Reasoner {
 
         rdfGraphWriter.initRDF();
         rdfGraphWriter.initGraph(node);
-        rdfGraphWriter.setNodeLabel(node);
+        rdfGraphWriter.setNodeLabel(null, node);
 
         boolean sat = dfs(node);
 
@@ -122,7 +122,7 @@ public class Reasoner {
                     // viene ripresa la struttura priva del primo disgiunto
 
                     // setta etichette nodo sx dopo risalita
-                    rdfGraphWriter.setNodeLabel(newNode);
+                    rdfGraphWriter.setNodeLabel(node, newNode);
 
                     newNode = new Node(node.getIndividual()); 
                     newNode.setStructure(new TreeSet<OWLAxiom>(structure));
@@ -132,7 +132,7 @@ public class Reasoner {
                     rdfGraphWriter.writeOnGraph(node, newNode, "⊔");                
 
                     // setta etichette nodo dx prima della scesa 
-                    rdfGraphWriter.setNodeLabel(newNode);
+                    rdfGraphWriter.setNodeLabel(node, newNode);
 
                     if (isClashFree(newNode.getStructure())){ 
                         return dfs(newNode);
@@ -141,7 +141,7 @@ public class Reasoner {
                         return false;
                     }                     
                 } else {
-                    rdfGraphWriter.setNodeLabel(newNode);
+                    rdfGraphWriter.setNodeLabel(node, newNode);
                     return true;
                 }
             }
@@ -193,7 +193,7 @@ public class Reasoner {
                             }
                         }
                     }
-                    rdfGraphWriter.setNodeLabel(newNode);
+                    rdfGraphWriter.setNodeLabel(node, newNode);
                     
                     if (isClashFree(newNode.getStructure())){ 
                         node.setSx();
