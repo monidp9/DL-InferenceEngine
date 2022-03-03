@@ -12,6 +12,7 @@ public class Node {
     private Set<OWLAxiom> structure;
     private Node parent = null;
     private OWLIndividual x;
+    
     private boolean blocked = false;
     private boolean sx = false;
     private Node parentOnGraph = null;

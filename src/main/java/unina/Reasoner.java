@@ -52,7 +52,7 @@ public class Reasoner {
 
         boolean sat = dfs(node);
 
-        rdfGraphWriter.renderRDF("result/tableau_rdf");
+        rdfGraphWriter.renderRDF("result/tableau_rdf.xml");
         rdfGraphWriter.renderGraph("result/tableau_graph");
 
         return sat;
@@ -60,7 +60,6 @@ public class Reasoner {
 
     private boolean dfs(Node node){ 
         if(node.isBlocked()) {
-            System.out.println("BLOCKED");
             return true;
         }
 
@@ -72,6 +71,8 @@ public class Reasoner {
 
         OWLClassExpression classExpression = null;
         OWLIndividual individual = null;
+
+        String labels;
 
         // applica AND esaustivamente 
         do{    
@@ -90,11 +91,10 @@ public class Reasoner {
                     } 
                 }
             }
-        } while (isAppliedRule);  
+        } while (isAppliedRule);
 
-        // scrittura della label del nodo
+        // scrittura label del nodo nel grafo
         rdfGraphWriter.setNodeLabel(node.getParentOnGraph(), node, false);
-
 
         // applica OR esaustivamente 
         for (OWLAxiom axiom : structure) {
@@ -103,6 +103,7 @@ public class Reasoner {
 
                 if (classExpression instanceof OWLObjectUnionOf) {
                     newNode = new Node(node.getIndividual());
+
                     newNode.setParentOnGraph(node);
                     newNode.setStructure(new TreeSet<OWLAxiom>(structure));
 
@@ -111,13 +112,12 @@ public class Reasoner {
                 }
             }
 
-            // se la regola non viene applicata viene valutato il prossimo assioma.
+            // se la regola non viene applicata viene valutato il prossimo assioma
             if (isAppliedRule){
                 node.setSx();
 
                 rdfGraphWriter.addRDFTriple(node, "orEdge", newNode);
                 rdfGraphWriter.writeOnGraph(node, newNode, "⊔");       
-
 
                 if(!isClashFree(newNode.getStructure())){
                     rdfGraphWriter.setNodeColor(newNode, "red");
@@ -127,24 +127,33 @@ public class Reasoner {
                 if (!isClashFree(newNode.getStructure()) || !dfs(newNode)) { 
                     // viene ripresa la struttura priva del primo disgiunto
 
-                    
                     newNode = new Node(node.getIndividual()); 
                     newNode.setStructure(new TreeSet<OWLAxiom>(structure));
                     newNode.setParentOnGraph(node);
 
                     isAppliedRule = handleUnionOf(classExpression, individual, node, newNode); 
                   
+                    // aggiunta arco di disgiunzione nel file RDF e nel grafo
                     rdfGraphWriter.addRDFTriple(node, "orEdge", newNode);
                     rdfGraphWriter.writeOnGraph(node, newNode, "⊔");  
 
-                    if (isClashFree(newNode.getStructure())){ 
+                    // aggiunta labels del nodo nel file RDF
+                    labels = rdfGraphWriter.getDiffLabels(node);
+                    rdfGraphWriter.addRDFTriple(node, "labels", labels);
+
+                    if (isClashFree(newNode.getStructure())) { 
                         return dfs(newNode);
                     } else {
+                        labels = rdfGraphWriter.getDiffLabels(newNode);
+                        rdfGraphWriter.addRDFTriple(newNode, "labels", labels);
+
                         rdfGraphWriter.setNodeLabel(node, newNode, false);
                         rdfGraphWriter.setNodeColor(newNode, "red");
                         return false;
                     }                     
                 } else {
+                    labels = rdfGraphWriter.getDiffLabels(node);
+                    rdfGraphWriter.addRDFTriple(node, "labels", labels);
                     return true;
                 }
             }
@@ -168,7 +177,7 @@ public class Reasoner {
         rdfGraphWriter.setNodeLabel(node.getParentOnGraph(), node, true);
         
         // applica ESISTENZIALE
-        if(isClashFree(structure)) { 
+        if(isClashFree(structure)) {
             structureTmp = new TreeSet<OWLAxiom>(structure);
 
             for (OWLAxiom firstAxiom : structureTmp) {
@@ -176,9 +185,9 @@ public class Reasoner {
                     classExpression = ((OWLClassAssertionAxiom) firstAxiom).getClassExpression();
     
                     if (classExpression instanceof OWLObjectSomeValuesFrom) {
-
-                        // non è detto che venga sempre utilizzato; il nuovo nodo porta cin sé i concetti del padre
                         newNode = new Node(df.getOWLAnonymousIndividual());
+
+                        // il nuovo nodo porta con sé i concetti del padre
                         newNode.setStructure(new TreeSet<OWLAxiom>(structure)); 
                         newNode.setParentOnGraph(node);
 
@@ -187,7 +196,7 @@ public class Reasoner {
                     }
                 }
 
-                if (isAppliedRule){
+                if (isAppliedRule) {
                     rdfGraphWriter.addRDFTriple(node, "exEdge", newNode);
                     rdfGraphWriter.writeOnGraph(node, newNode, "∃");                
 
@@ -201,14 +210,23 @@ public class Reasoner {
                         }
                     }
 
-                    if (isClashFree(newNode.getStructure())){ 
+                    if (isClashFree(newNode.getStructure())) { 
                         node.setSx();
                         setIfBlocked(newNode);
                         if(!dfs(newNode)){
+                            labels = rdfGraphWriter.getDiffLabels(node);
+                            rdfGraphWriter.addRDFTriple(node, "labels", labels);
+
                             return false;
                         }
                         isAppliedRule = false;
                     } else {
+                        labels = rdfGraphWriter.getDiffLabels(node);
+                        rdfGraphWriter.addRDFTriple(node, "labels", labels);
+
+                        labels = rdfGraphWriter.getDiffLabels(newNode);
+                        rdfGraphWriter.addRDFTriple(newNode, "labels", labels);
+                        
                         rdfGraphWriter.setNodeLabel(node, newNode, false);
                         rdfGraphWriter.setNodeColor(newNode,"red");
                         return false;
@@ -216,11 +234,18 @@ public class Reasoner {
                 }
             }
         } else {
+            labels = rdfGraphWriter.getDiffLabels(node);
+            rdfGraphWriter.addRDFTriple(node, "labels", labels);
+
             rdfGraphWriter.setNodeColor(node, "red");
+
             return false;        
         }
 
-        if(!node.getSx()){
+        labels = rdfGraphWriter.getDiffLabels(node);
+        rdfGraphWriter.addRDFTriple(node, "labels", labels);
+
+        if(!node.getSx()) {
             rdfGraphWriter.setNodeColor(node, "green");
         }
 
@@ -480,7 +505,7 @@ public class Reasoner {
         this.useLazyUnfolding = true;
     }
 
-    private Pair<List<OWLAxiom>, List<OWLAxiom>> lazyUnfoldingPartitioning(List<OWLAxiom> tbox){
+    private Pair<List<OWLAxiom>, List<OWLAxiom>> lazyUnfoldingPartitioning(List<OWLAxiom> tbox) {
         /* 
          * Tale metodo partiziona la tbox andando a creare due liste di assiomi:
          *  - Tu contenente solo assiomi unfoldable
@@ -532,7 +557,7 @@ public class Reasoner {
         return new Pair<List<OWLAxiom>, List<OWLAxiom>>(Tu, Tg);
     }
 
-    private OWLSubClassOfAxiom transformSubClassAx(OWLSubClassOfAxiom subClassAx){
+    private OWLSubClassOfAxiom transformSubClassAx(OWLSubClassOfAxiom subClassAx) {
 
         /*  
          *  Il metodo trasforma l'assioma di inclusione in modo tale che
@@ -634,7 +659,7 @@ public class Reasoner {
         }      
     }
 
-    private boolean checkCompatibilityWithGCI(List<OWLAxiom> Tu, OWLClass A){
+    private boolean checkCompatibilityWithGCI(List<OWLAxiom> Tu, OWLClass A) {
 
         /*
          * Il metodo controlla che il concetto atomico A non compaia a
@@ -743,7 +768,7 @@ public class Reasoner {
         }
     }
 
-    private boolean applyLazyUnfoldingRule(OWLClassAssertionAxiom classAssertion, Node node){
+    private boolean applyLazyUnfoldingRule(OWLClassAssertionAxiom classAssertion, Node node) {
 
         /*
          * Applica le regole di Lazy Unfolding a partire da un'asserzione. 
@@ -830,7 +855,7 @@ public class Reasoner {
 
     // ----------------------------------------------------------- tbox management ----------------------------------------------------------- //
 
-    public void setTbox(List<OWLAxiom> tbox){
+    public void setTbox(List<OWLAxiom> tbox) {
         this.tbox = tbox;
     }
 
@@ -922,9 +947,18 @@ public class Reasoner {
                 }
             }
         }
-        Stream<OWLClassExpression> operands = Stream.of(gciConj, equivConj, domRangeConj);
-        concept = df.getOWLObjectIntersectionOf(operands.filter(Objects::nonNull));
+        List<OWLClassExpression> operands = new LinkedList<>();
 
+        if(gciConj != null) operands.add(gciConj);
+        if(equivConj != null) operands.add(equivConj);
+        if(domRangeConj != null) operands.add(domRangeConj);
+
+        if(operands.size() > 1) {
+            concept = df.getOWLObjectIntersectionOf(operands.stream());
+        } else {
+            concept = operands.get(0);
+        }
+        
         return concept;
     }
 }

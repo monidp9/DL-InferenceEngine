@@ -174,7 +174,7 @@ public class IOParser {
         io.setView(view);
 
         // caricamento TBox
-        String filePath = "ontologie/foodeasy.man.owl";
+        String filePath = "ontologie/food.man.owl";
         io.loadOntology(filePath);
         List<OWLAxiom> tbox = io.getTbox();
                 

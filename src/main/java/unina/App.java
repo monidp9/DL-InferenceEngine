@@ -2,6 +2,7 @@ package unina;
 
 
 import java.io.FileOutputStream;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 
@@ -18,6 +19,7 @@ import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataFactory;
+import org.semanticweb.owlapi.model.OWLObjectIntersectionOf;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
 import org.semanticweb.owlapi.model.OWLObjectUnionOf;
@@ -32,26 +34,6 @@ public class App
         App app = new App();
         app.createAnOntology();
 
-        Model model = ModelFactory.createDefaultModel();
-
-        String namespace = "http://example.org/";
-
-        model.setNsPrefix("ex", namespace);
-
-
-        
-        // x0.addProperty(model.createProperty(namespace, "labels"), "A and B");
-        // x0.addProperty(model.createProperty(namespace, "orEdge"), x1);
-        // x0.addProperty(model.createProperty(namespace, "orEdge"), x2);
-        
-        // x1.addProperty(model.createProperty(namespace, "labels"), "A or (B and D)");
-
-        // x2.addProperty(model.createProperty(namespace, "labels"), "F");
-        // x2.addProperty(model.createProperty(namespace, "exEdge"), x3);
-
-        FileOutputStream fileout = new FileOutputStream("result/tableau");
-
-        RDFDataMgr.write(fileout, model, Lang.TURTLE);
     }
 
     public void createAnOntology() throws Exception{
@@ -97,6 +79,8 @@ public class App
 
         // File fileout = new File("pizza.man.owl");
         // man.saveOntology(o, new ManchesterSyntaxDocumentFormat(), new FileOutputStream(fileout));
+        Stream<OWLClassExpression> s = Stream.of(Person, null);
+
     }
 
 

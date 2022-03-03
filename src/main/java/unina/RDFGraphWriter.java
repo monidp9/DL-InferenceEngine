@@ -17,6 +17,7 @@ import static guru.nidi.graphviz.model.Factory.*;
 public class RDFGraphWriter {
     private Model model;
     private String namespace;
+
     private HashMap<Node, MutableNode> graphNodes = new HashMap<>();
     private MutableGraph graph; 
 
@@ -43,6 +44,7 @@ public class RDFGraphWriter {
             child = (Node) obj;
 
             y = model.createResource(nodePrefix + child.getId());
+
             prop = model.createProperty(namespace, propName);
             x.addProperty(prop, y);
 
@@ -66,7 +68,7 @@ public class RDFGraphWriter {
 
     // ----------------------------------------------------------- graph ----------------------------------------------------------- //
 
-    public void initGraph(Node node){
+    public void initGraph(Node node) {
         MutableNode n = mutNode(node.getId().toString()); 
         graphNodes.put(node, n);
         
@@ -74,7 +76,7 @@ public class RDFGraphWriter {
         graph.add(n);  
     }
 
-    public void writeOnGraph(Node node, Node child, String rule) {
+    public void writeOnGraph(Node node, Node child, String rule) {        
         MutableNode mutableNode = graphNodes.get(node);
 
         MutableNode mutChild = mutNode(child.getId().toString());
@@ -83,12 +85,12 @@ public class RDFGraphWriter {
         graphNodes.put(child, mutChild);
     }
 
-    public String getLabel(Set<OWLAxiom> set){
+    public String getAllLabels(Set<OWLAxiom> set) {
         OWLClassExpression classExpression;
         String label = null;
 
         for(OWLAxiom axiom : set){
-            if (axiom instanceof OWLClassAssertionAxiom){ 
+            if (axiom instanceof OWLClassAssertionAxiom){
                 classExpression = ((OWLClassAssertionAxiom) axiom).getClassExpression();
                 Container<String> labelContainer = new Container<>("");
                 createLabel(classExpression, labelContainer);
@@ -102,7 +104,37 @@ public class RDFGraphWriter {
             }
         }
         return label;
-     }
+    }
+
+    public String getDiffLabels(Node node) {
+        OWLClassExpression classExpression;
+        String labels = null;
+
+        Node parent = node.getParentOnGraph();
+        Set<OWLAxiom> parentStructure;
+        Set<OWLAxiom> nodeStructure = new TreeSet<>(node.getStructure());
+
+        if(parent != null) {
+            parentStructure = parent.getStructure();
+            nodeStructure.removeAll(parentStructure);
+        }
+
+        for(OWLAxiom axiom : nodeStructure){
+            if (axiom instanceof OWLClassAssertionAxiom){
+                classExpression = ((OWLClassAssertionAxiom) axiom).getClassExpression();
+                Container<String> labelContainer = new Container<>("");
+                createLabel(classExpression, labelContainer);
+
+                if(labels == null){
+                    labels = labelContainer.getValue();
+                } else {
+                    labels = labels + ", " + labelContainer.getValue();
+
+                }
+            }
+        }
+        return labels;
+    }
 
     private void createLabel(OWLClassExpression C, Container<String> labelContainer) {
         /* 
@@ -129,13 +161,13 @@ public class RDFGraphWriter {
             }
         }
 
-        
         if(C instanceof OWLObjectIntersectionOf){
             C.accept(new OWLClassExpressionVisitor() {
                 @Override
                 public void visit(OWLObjectIntersectionOf oi) {
                     String label = labelContainer.getValue() + "(";
                     labelContainer.setValue(label);
+
 
                     OWLClassExpression ceSx =  oi.getOperandsAsList().get(0);
                     createLabel(ceSx, labelContainer);
@@ -201,7 +233,7 @@ public class RDFGraphWriter {
         }
     }
      
-    private String getConceptName(OWLClass C){
+    private String getConceptName(OWLClass C) {
         String concept = C.toStringID();
         int hashMarkIndex = concept.indexOf("#");
         String conceptName = concept.substring(hashMarkIndex+1); //, hashMarkIndex+4); 
@@ -214,14 +246,14 @@ public class RDFGraphWriter {
         return conceptName;
     }
 
-    private String getPropertyName(OWLObjectPropertyExpression R){
+    private String getPropertyName(OWLObjectPropertyExpression R) {
         String property = R.toString();
         int hashMarkIndex = property.indexOf("#");
-        String propertyName = property.substring(hashMarkIndex+1, hashMarkIndex+4); //property.length()-1
+        String propertyName = property.substring(hashMarkIndex+1, property.length()-1); //property.length()-1
         return propertyName;
     }
 
-    public void setNodeLabel(Node parent, Node node, boolean color){
+    public void setNodeLabel(Node parent, Node node, boolean color) {
         MutableNode n = graphNodes.get(node);
         Set<OWLAxiom> nodeStructure = node.getStructure();
         Set<OWLAxiom> axiomDifference = new TreeSet<>(nodeStructure);
@@ -232,7 +264,7 @@ public class RDFGraphWriter {
             axiomDifference.removeAll(parentStructure);
         }
 
-        String nodeLabel = getLabel(axiomDifference);
+        String nodeLabel = getAllLabels(axiomDifference);
 
         if(color){
             labelNode = mutNode(nodeLabel + "\n(LU "+node.getId()+")").add(Shape.RECTANGLE, Color.BLUE); 
@@ -242,18 +274,19 @@ public class RDFGraphWriter {
         n.addLink(to(labelNode).with(Style.DASHED));
     }
 
-    public void renderGraph(String filePath) {
-        try {
-            Graphviz.fromGraph(graph).width(10000).render(Format.PNG).toFile(new File(filePath));
-        } catch(IOException e) {
-            e.printStackTrace();
-        }
-    }
     public void setNodeColor(Node newNode, String color) {
         if(color.equals("red")){
             graphNodes.get(newNode).add(Color.RED);
         } else if(color.equals("green")){
             graphNodes.get(newNode).add(Color.GREEN);
+        }
+    }
+
+    public void renderGraph(String filePath) {
+        try {
+            Graphviz.fromGraph(graph).width(10000).render(Format.PNG).toFile(new File(filePath));
+        } catch(IOException e) {
+            e.printStackTrace();
         }
     }
 }
