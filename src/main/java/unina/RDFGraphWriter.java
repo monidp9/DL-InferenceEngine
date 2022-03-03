@@ -42,6 +42,7 @@ public class RDFGraphWriter {
             child = (Node) obj;
 
             y = model.createResource(nodePrefix + child.getId());
+
             prop = model.createProperty(namespace, propName);
             x.addProperty(prop, y);
 
@@ -73,7 +74,7 @@ public class RDFGraphWriter {
         graph.add(n);  
     }
 
-    public void writeOnGraph(Node node, Node child, String rule) {
+    public void writeOnGraph(Node node, Node child, String rule) {        
         MutableNode mutableNode = graphNodes.get(node);
         MutableNode mutChild = mutNode(child.getId().toString());
         

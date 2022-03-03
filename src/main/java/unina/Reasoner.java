@@ -93,7 +93,7 @@ public class Reasoner {
                     } 
                 }
             }
-        } while (isAppliedRule);  
+        } while (isAppliedRule);
 
         // applica OR esaustivamente 
         for (OWLAxiom axiom : structure) {
@@ -137,17 +137,15 @@ public class Reasoner {
                     // setta etichette nodo dx prima della scesa 
                     rdfGraphWriter.setNodeLabel(newNode);
 
+                    // IMPOSTA LABEL RDF (node)
                     if (isClashFree(newNode.getStructure())){ 
                         return dfs(newNode);
                     } else {
-                        // label = rdfGraphWriter.getLabel(newNode.getStructure());
-                        // rdfGraphWriter.addRDFTriple(newNode, "labels", label);
                         rdfGraphWriter.setNodeColor(newNode, "red");
                         return false;
                     }                     
                 } else {
-                    // label = rdfGraphWriter.getLabel(newNode.getStructure());
-                    // rdfGraphWriter.addRDFTriple(newNode, "labels", label);
+                    // IMPOSTA LABEL RDF (node)
                     rdfGraphWriter.setNodeLabel(newNode);
                     return true;
                 }
@@ -169,7 +167,7 @@ public class Reasoner {
         } while(isAppliedRule);
 
         // applica ESISTENZIALE
-        if(isClashFree(structure)) { 
+        if(isClashFree(structure)) {
             structureTmp = new TreeSet<OWLAxiom>(structure);
 
             for (OWLAxiom firstAxiom : structureTmp) {
@@ -178,8 +176,9 @@ public class Reasoner {
     
                     if (classExpression instanceof OWLObjectSomeValuesFrom) {
 
-                        // non è detto che venga sempre utilizzato; il nuovo nodo porta cin sé i concetti del padre
+                        // non è detto che venga sempre utilizzato 
                         newNode = new Node(df.getOWLAnonymousIndividual());
+                        // il nuovo nodo porta con sé i concetti del padre
                         newNode.setStructure(new TreeSet<OWLAxiom>(structure)); 
 
                         individual = ((OWLClassAssertionAxiom) firstAxiom).getIndividual();
@@ -187,7 +186,8 @@ public class Reasoner {
                     }
                 }
 
-                if (isAppliedRule){
+                if (isAppliedRule) {
+                    // IMPOSTA LABEL RDF (node)
                     rdfGraphWriter.addRDFTriple(node, "exEdge", newNode);
                     rdfGraphWriter.writeOnGraph(node, newNode, "∃");                
 
@@ -202,7 +202,7 @@ public class Reasoner {
                     }
                     rdfGraphWriter.setNodeLabel(newNode);
                     
-                    if (isClashFree(newNode.getStructure())){ 
+                    if (isClashFree(newNode.getStructure())) { 
                         node.setSx();
                         setIfBlocked(newNode);
                         if(!dfs(newNode)){
@@ -210,21 +210,17 @@ public class Reasoner {
                         }
                         isAppliedRule = false;
                     } else {
-                        // label = rdfGraphWriter.getLabel(node.getStructure());
-                        // rdfGraphWriter.addRDFTriple(node, "labels", label);
                         rdfGraphWriter.setNodeColor(node,"red");
                         return false;
                     }
                 }
             }
         } else {
-            // label = rdfGraphWriter.getLabel(node.getStructure());
-            // rdfGraphWriter.addRDFTriple(node, "labels", label);
+            // IMPOSTA LABEL RDF (node)
             rdfGraphWriter.setNodeColor(node, "red");
             return false;
         }
-        // label = rdfGraphWriter.getLabel(node.getStructure());
-        // rdfGraphWriter.addRDFTriple(node, "labels", label);
+        // IMPOSTA LABEL RDF (node)
         rdfGraphWriter.setNodeColor(node, "green");
         return true;
     } 
