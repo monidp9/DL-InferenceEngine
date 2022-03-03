@@ -1,19 +1,17 @@
 package unina.view;
 
-import javax.swing.JDialog;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.plaf.metal.OceanTheme;
 
-public class LoadingPanel extends JPanel{
+public class LoadingPanel extends JPanel {
 
     Thread t;
 
-    public LoadingPanel(){
-
+    public LoadingPanel() {
+        
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
             MetalLookAndFeel.setCurrentTheme(new OceanTheme());
@@ -33,7 +31,7 @@ public class LoadingPanel extends JPanel{
         this.t = t;
     }
     
-    public void closePanel(){
+    public void closePanel() {
         t.interrupt();
     }
 }

@@ -3,7 +3,6 @@ package unina;
 import java.io.*;
 import java.util.*;
 
-import org.apache.jena.base.Sys;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.*;
 import org.semanticweb.owlapi.model.*;
@@ -15,6 +14,12 @@ import static guru.nidi.graphviz.model.Factory.*;
 
 
 public class RDFGraphWriter {
+
+    /*
+     * Implementa le funzioni per la scrittura del grafo e del file RDF a partire
+     * dal tableau risultato del reasoning.
+     */
+
     private Model model;
     private String namespace;
 

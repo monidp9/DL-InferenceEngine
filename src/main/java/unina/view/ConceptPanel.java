@@ -9,19 +9,12 @@ import java.io.FileWriter;
 import java.awt.event.*;
 
 import javax.swing.*;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextArea;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.plaf.metal.OceanTheme;
 
 import org.semanticweb.owlapi.manchestersyntax.renderer.ParserException;
 import javafx.application.Platform;
+import javafx.stage.WindowEvent;
 import unina.IOParser;
 
 
@@ -48,9 +41,10 @@ public class ConceptPanel extends JPanel implements ActionListener{
     private void createPanel() {
         t = new JTextArea();
         d = new JDialog();
-
-        d.setTitle("Enter your concept (Manchester Syntax)");
-
+        
+        t.setLineWrap(true);
+        d.setTitle("Enter your concept (Manchester Syntax)");    
+        
         JMenuBar mb = new JMenuBar();
 
         JMenu m1 = new JMenu("File");
@@ -69,6 +63,7 @@ public class ConceptPanel extends JPanel implements ActionListener{
         m1.add(mi4);
         
         mb.add(m1);
+        mb.add(new JSeparator());
         mb.add(mi2);
         mb.add(mi3);
 
@@ -80,7 +75,6 @@ public class ConceptPanel extends JPanel implements ActionListener{
         d.setModal(true);
         d.setVisible(true);
     }
-
 
     public void actionPerformed(ActionEvent e) {
         
@@ -116,17 +110,16 @@ public class ConceptPanel extends JPanel implements ActionListener{
                 JOptionPane.showMessageDialog(d, "the user cancelled the operation");
             }
         } else if(s.equals("Done")) {
-
             String expr = t.getText();
 
             try {
                 ioParser.fromExprToConcept(expr);
             } catch (ParserException ex) {
                 JOptionPane.showMessageDialog(d, "Manchester syntax error.", "ERROR", JOptionPane.ERROR_MESSAGE);
-                System.exit(1);
-            } finally {
-                JOptionPane.showMessageDialog(d, "Concept traslated.", "SUCCESS", JOptionPane.INFORMATION_MESSAGE);
-            }
+                t.setText(null);
+                return;
+            } 
+            JOptionPane.showMessageDialog(d, "Concept traslated.", "SUCCESS", JOptionPane.INFORMATION_MESSAGE);
             
             d.setModal(false);
             d.setVisible(false);
@@ -166,7 +159,6 @@ public class ConceptPanel extends JPanel implements ActionListener{
                 JOptionPane.showMessageDialog(d, "the user cancelled the operation");
         }
     }
-
 
     public void showMsgError(String msg) {
         JOptionPane.showMessageDialog(d, msg, "ERROR", JOptionPane.ERROR_MESSAGE, null);
