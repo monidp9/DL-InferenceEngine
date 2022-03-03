@@ -26,6 +26,8 @@ import javax.swing.JPanel;
 public class GraphPanel extends JPanel implements MouseWheelListener, MouseListener, MouseMotionListener {
 
     private BufferedImage image = null;
+    private Image scaledImage = null;
+
     private double zoomFactor = 1;
     private double prevZoomFactor = 1;
     private boolean zoomer;
@@ -55,7 +57,7 @@ public class GraphPanel extends JPanel implements MouseWheelListener, MouseListe
 
         try{
             image = ImageIO.read(new File("result/tableau_graph.png"));
-            //Image scaledImage = image.getScaledInstance(this.getWidth(),this.getHeight(),Image.SCALE_SMOOTH);
+            scaledImage = image.getScaledInstance(this.getWidth(),this.getHeight(),Image.SCALE_SMOOTH);
             //g.drawImage(scaledImage, 0, 0, this);
         } catch (IOException e){
             e.printStackTrace();;
@@ -97,7 +99,7 @@ public class GraphPanel extends JPanel implements MouseWheelListener, MouseListe
         }
 
         // All drawings go here
-        g2.drawImage(image, 0, 0, this);
+        g2.drawImage(scaledImage, 0, 0, this);
     }
 
 
