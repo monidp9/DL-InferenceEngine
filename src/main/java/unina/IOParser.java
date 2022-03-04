@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import java.util.*;
 
+import org.apache.jena.base.Sys;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.expression.ShortFormEntityChecker;
 import org.semanticweb.owlapi.manchestersyntax.renderer.ManchesterOWLSyntaxPrefixNameShortFormProvider;
@@ -168,7 +169,7 @@ public class IOParser {
         view.openConceptReadingView(io);
 
         OWLClassExpression concept = io.getConcept();
-
+        
         System.out.println("\n ------ TRANSLATED ------");
         System.out.println("\nCONCEPT: \n" + concept + "\n");
 

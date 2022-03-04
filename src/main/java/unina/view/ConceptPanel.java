@@ -1,6 +1,5 @@
 package unina.view;
 
-import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -17,8 +16,7 @@ import javafx.application.Platform;
 import unina.IOParser;
 
 
-
-public class ConceptPanel extends JPanel implements ActionListener {
+public class ConceptPanel extends JPanel implements ActionListener{
 
     private JTextArea t;
     private JDialog d;
@@ -26,12 +24,10 @@ public class ConceptPanel extends JPanel implements ActionListener {
 
     public ConceptPanel(IOParser ioParser){
         this.ioParser = ioParser;
-
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
             MetalLookAndFeel.setCurrentTheme(new OceanTheme());
         } catch (Exception e) { e.printStackTrace(); }
-
 
         createPanel();
     }
@@ -59,6 +55,33 @@ public class ConceptPanel extends JPanel implements ActionListener {
         mi3.addActionListener(this);
         mi4.addActionListener(this);
 
+        d.addWindowListener(new WindowListener(){
+
+            @Override
+            public void windowOpened(WindowEvent e) {}
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                System.exit(1);
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {}
+
+            @Override
+            public void windowIconified(WindowEvent e) {}
+
+            @Override
+            public void windowDeiconified(WindowEvent e) {}
+
+            @Override
+            public void windowActivated(WindowEvent e) {}
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {}
+            } 
+        );
+
         m1.add(mi1);
         m1.add(mi4);
         
@@ -74,6 +97,7 @@ public class ConceptPanel extends JPanel implements ActionListener {
         d.setLocationRelativeTo(null);
         d.setModal(true);
         d.setVisible(true);
+
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -84,6 +108,8 @@ public class ConceptPanel extends JPanel implements ActionListener {
          */
 
         String s = e.getActionCommand();
+
+
 
         if(s.equals("Save")) {
             JFileChooser j = new JFileChooser("f:");
