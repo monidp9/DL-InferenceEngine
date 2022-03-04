@@ -186,11 +186,13 @@ public class Reasoner {
         int newStrSize = node.getStructure().size();
 
         if(oldStrSize < newStrSize){
+            node.setAppliedLU(true);
             return dfs(node);
         }
 
-
+        node.setAppliedLU(false);
         rdfGraphWriter.setNodeLabel(node.getParentOnGraph(), node, true);
+
         
         // applica ESISTENZIALE
         if(isClashFree(structure)) {
