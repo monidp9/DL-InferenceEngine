@@ -32,6 +32,8 @@ public class IOParser {
     private OWLClassExpression concept = null;
     private View view;
 
+    private static String filePath = "ontologies/food.man.owl";
+
 
     public IOParser() {
         man = OWLManager.createOWLOntologyManager();  
@@ -160,7 +162,6 @@ public class IOParser {
         io.setView(view);
 
         // caricamento TBox
-        String filePath = "ontologie/food.man.owl";
         io.loadOntology(filePath);
         List<OWLAxiom> tbox = io.getTbox();
                 
