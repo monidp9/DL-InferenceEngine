@@ -50,7 +50,13 @@ public class Reasoner {
         rdfGraphWriter.initRDF();
         rdfGraphWriter.initGraph(node);
 
+        long startTime = System.nanoTime();
         boolean sat = dfs(node);
+        long stopTime = System.nanoTime();
+
+        System.out.print("[Time passed: ");
+        System.out.print((stopTime - startTime) / 1000000);
+        System.out.print("ms] ");
 
         rdfGraphWriter.renderRDF("result/tableau_rdf.xml");
         rdfGraphWriter.renderGraph("result/tableau_graph");
