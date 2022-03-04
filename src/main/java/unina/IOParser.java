@@ -155,6 +155,7 @@ public class IOParser {
 
         IOParser io = new IOParser();
         Reasoner reasoner = new Reasoner();
+
         View view = new View();
         io.setView(view);
 
@@ -163,12 +164,10 @@ public class IOParser {
         io.loadOntology(filePath);
         List<OWLAxiom> tbox = io.getTbox();
                 
-
         //lettura e traduzione in concetto
         view.openConceptReadingView(io);
 
         OWLClassExpression concept = io.getConcept();
-
 
         System.out.println("\n ------ TRANSLATED ------");
         System.out.println("\nCONCEPT: \n" + concept + "\n");

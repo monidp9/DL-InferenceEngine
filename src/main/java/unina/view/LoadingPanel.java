@@ -16,7 +16,7 @@ public class LoadingPanel extends JPanel {
             UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
             MetalLookAndFeel.setCurrentTheme(new OceanTheme());
         } catch (Exception e) { e.printStackTrace(); }
-        
+
        createPanel();
     }
 

@@ -14,12 +14,11 @@ import javax.swing.plaf.metal.OceanTheme;
 
 import org.semanticweb.owlapi.manchestersyntax.renderer.ParserException;
 import javafx.application.Platform;
-import javafx.stage.WindowEvent;
 import unina.IOParser;
 
 
 
-public class ConceptPanel extends JPanel implements ActionListener{
+public class ConceptPanel extends JPanel implements ActionListener {
 
     private JTextArea t;
     private JDialog d;
@@ -41,10 +40,11 @@ public class ConceptPanel extends JPanel implements ActionListener{
     private void createPanel() {
         t = new JTextArea();
         d = new JDialog();
-        
+    
         t.setLineWrap(true);
-        d.setTitle("Enter your concept (Manchester Syntax)");    
-        
+        d.setTitle("Enter your concept (Manchester Syntax)"); 
+        d.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+   
         JMenuBar mb = new JMenuBar();
 
         JMenu m1 = new JMenu("File");
