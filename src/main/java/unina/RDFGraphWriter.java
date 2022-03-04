@@ -16,8 +16,8 @@ import static guru.nidi.graphviz.model.Factory.*;
 public class RDFGraphWriter {
 
     /*
-     * Implementa le funzioni per la scrittura del grafo e del file RDF a partire
-     * dal tableau risultato del reasoning.
+     * Implementa le funzioni per la scrittura del tableau sotto forma di grafo 
+     * e file RDF. 
      */
 
     private Model model;
