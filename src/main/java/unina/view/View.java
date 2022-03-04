@@ -3,18 +3,24 @@ package unina.view;
 import java.io.File;
 import java.io.IOException;
 
+import javax.swing.JFrame;
+
 import unina.IOParser;
 
 import java.awt.Desktop;
 
 
-public class View {
+public class View extends JFrame{
 
     private ConceptPanel conceptPanel = null; 
     private LoadingPanel loadingPanel = null; 
 
+    public View(){
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+    }
+
     public void openConceptReadingView(IOParser io) {
-        conceptPanel = new ConceptPanel(io);
+        setContentPane(new ConceptPanel(io));
         loadingPanel = new LoadingPanel();
     }
 
