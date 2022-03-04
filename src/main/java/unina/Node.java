@@ -18,6 +18,15 @@ public class Node {
     private Node parentOnGraph = null;
     private Integer id = 0;
     private static Integer counterId = 0;
+    private boolean isAppliedLU;
+
+    public void setAppliedLU(boolean value){
+        isAppliedLU = value;
+    }
+
+    public boolean isAppliedLU(){
+        return isAppliedLU;
+    }
 
     public Node(OWLIndividual x){
         this.structure = new TreeSet <OWLAxiom>();

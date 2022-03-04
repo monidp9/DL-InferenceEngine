@@ -261,24 +261,27 @@ public class RDFGraphWriter {
     }
 
     public void setNodeLabel(Node parent, Node node, boolean color) {
-        MutableNode n = graphNodes.get(node);
-        Set<OWLAxiom> nodeStructure = node.getStructure();
-        Set<OWLAxiom> axiomDifference = new TreeSet<>(nodeStructure);
-        MutableNode labelNode;
 
-        if(parent != null){
-            Set<OWLAxiom> parentStructure = parent.getStructure();
-            axiomDifference.removeAll(parentStructure);
+        if(!node.isAppliedLU()){
+            MutableNode n = graphNodes.get(node);
+            Set<OWLAxiom> nodeStructure = node.getStructure();
+            Set<OWLAxiom> axiomDifference = new TreeSet<>(nodeStructure);
+            MutableNode labelNode;
+
+            if(parent != null){
+                Set<OWLAxiom> parentStructure = parent.getStructure();
+                axiomDifference.removeAll(parentStructure);
+            }
+
+            String nodeLabel = getAllLabels(axiomDifference);
+
+            if(color){
+                labelNode = mutNode(nodeLabel + "\n(LU "+node.getId()+")").add(Shape.RECTANGLE, Color.BLUE); 
+            } else {
+                labelNode = mutNode(nodeLabel + "\n("+ node.getId()+")").add(Shape.RECTANGLE); 
+            }
+            n.addLink(to(labelNode).with(Style.DASHED));
         }
-
-        String nodeLabel = getAllLabels(axiomDifference);
-
-        if(color){
-            labelNode = mutNode(nodeLabel + "\n(LU "+node.getId()+")").add(Shape.RECTANGLE, Color.BLUE); 
-        } else {
-            labelNode = mutNode(nodeLabel + "\n("+ node.getId()+")").add(Shape.RECTANGLE); 
-        }
-        n.addLink(to(labelNode).with(Style.DASHED));
     }
 
     public void setNodeColor(Node newNode, String color) {
