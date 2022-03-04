@@ -31,9 +31,9 @@ public class View extends JFrame{
             Desktop.getDesktop().open(new File("result/tableau_graph.png"));
         } catch(IOException e) {
             e.printStackTrace();
+            System.exit(1);
         }
-    
-        System.exit(1);
+        System.exit(0);
     }
 
     public void showError(String msg) {

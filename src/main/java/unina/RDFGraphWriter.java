@@ -1,6 +1,8 @@
 package unina;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 import org.apache.jena.rdf.model.*;
@@ -161,7 +163,7 @@ public class RDFGraphWriter {
                 labelContainer.setValue(label + "¬" + conceptName);
             } else {
                 Container<String> manageComplementOf =  new Container<>("");
-                createLabel(C,manageComplementOf);
+                createLabel(ce,manageComplementOf);
                 labelContainer.setValue(label + "¬(" + manageComplementOf.getValue() + ")");   
             }
         }
@@ -288,10 +290,19 @@ public class RDFGraphWriter {
     }
 
     public void renderGraph(String filePath) {
+
+        try {
+            Files.delete(Paths.get(filePath + ".png"));
+        } catch(IOException e) {}
+
         try {
             Graphviz.fromGraph(graph).width(10000).render(Format.PNG).toFile(new File(filePath));
         } catch(IOException e) {
             e.printStackTrace();
+            System.exit(1);
+        } catch(GraphvizException e){
+            System.err.println("[ERR:] Etichetta troppo grande da rappresentare\n");
+            System.exit(1);
         }
     }
 }
