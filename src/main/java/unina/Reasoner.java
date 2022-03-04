@@ -6,6 +6,7 @@ import java.util.stream.Stream;
 import javafx.util.Pair;
 import java.util.*;
 
+import org.apache.jena.base.Sys;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 
@@ -117,7 +118,7 @@ public class Reasoner {
                     isAppliedRule = handleUnionOf(classExpression, individual, node, newNode);
                 }
             }
-
+            
             // se la regola non viene applicata viene valutato il prossimo assioma
             if (isAppliedRule){
                 node.setSx();
@@ -165,6 +166,8 @@ public class Reasoner {
             }
         }
 
+        int oldStrSize = node.getStructure().size();
+
         // applica regole di LAZY UNFOLDING
         do {
             isAppliedRule = false;
@@ -178,6 +181,13 @@ public class Reasoner {
                 }
             }
         } while(isAppliedRule);
+
+
+        int newStrSize = node.getStructure().size();
+
+        if(oldStrSize < newStrSize){
+            return dfs(node);
+        }
 
 
         rdfGraphWriter.setNodeLabel(node.getParentOnGraph(), node, true);
