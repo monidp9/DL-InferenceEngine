@@ -16,8 +16,6 @@ import javafx.application.Platform;
 import unina.IOParser;
 
 
-
-
 public class ConceptPanel extends JPanel implements ActionListener{
 
     private JTextArea t;
@@ -38,10 +36,11 @@ public class ConceptPanel extends JPanel implements ActionListener{
     private void createPanel() {
         t = new JTextArea();
         d = new JDialog();
-        
+    
         t.setLineWrap(true);
-        d.setTitle("Enter your concept (Manchester Syntax)");    
-        
+        d.setTitle("Enter your concept (Manchester Syntax)"); 
+        d.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+   
         JMenuBar mb = new JMenuBar();
 
         JMenu m1 = new JMenu("File");

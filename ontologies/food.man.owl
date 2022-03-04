@@ -46,7 +46,7 @@ Class: t:Person
     
 Class: t:Vegetable
 
-    SubClassOf: 
+    SubClassOf:
         t:VegetarianFood
     
     

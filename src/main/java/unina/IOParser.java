@@ -5,7 +5,6 @@ import java.util.stream.Collectors;
 
 import java.util.*;
 
-import org.apache.jena.base.Sys;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.expression.ShortFormEntityChecker;
 import org.semanticweb.owlapi.manchestersyntax.renderer.ManchesterOWLSyntaxPrefixNameShortFormProvider;
@@ -158,26 +157,32 @@ public class IOParser {
 
         IOParser io = new IOParser();
         Reasoner reasoner = new Reasoner();
+
         View view = new View();
         io.setView(view);
 
         // caricamento TBox
         io.loadOntology(filePath);
-        List<OWLAxiom> tbox = io.getTbox();
+        reasoner.setTbox(io.getTbox());
                 
-
         //lettura e traduzione in concetto
         view.openConceptReadingView(io);
 
         OWLClassExpression concept = io.getConcept();
         
-        System.out.println("\n ------ TRANSLATED ------");
-        System.out.println("\nCONCEPT: \n" + concept + "\n");
+        System.out.println("\n------ TABLEAUX METHOD FOR SAT IN ALC ------");
+        System.out.println("\nINPUT CONCEPT: \n" + concept + "\n");
 
         reasoner.activeLazyUnfolding();
-        reasoner.setTbox(tbox);
         
-        System.out.println("\nTABLEAUX : "+reasoner.reasoning(concept));
+        boolean sat = reasoner.reasoning(concept);
+        System.out.print("Concept satisfability: ");
+        if(sat) {
+            System.out.println("Yes");
+        } else {
+            System.out.println("No");
+        }
+        System.out.println("\n");
 
         view.openGraphView();
     }
