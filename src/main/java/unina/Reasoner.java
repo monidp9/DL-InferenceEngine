@@ -31,7 +31,7 @@ public class Reasoner {
         structure.add(df.getOWLClassAssertionAxiom(C, x0));
 
         if(useLazyUnfolding && tbox != null && !tbox.isEmpty()){
-            Pair<List<OWLAxiom>, List<OWLAxiom>> tboxLazyUnfolding = getLazyUnfoldingPartitioning(tbox); 
+            Pair<List<OWLAxiom>, List<OWLAxiom>> tboxLazyUnfolding = getLazyUnfoldingPartition(tbox); 
             List<OWLAxiom> Tu = tboxLazyUnfolding.getKey();
             List<OWLAxiom> Tg = tboxLazyUnfolding.getValue();
             this.Tu = Tu;
@@ -523,7 +523,7 @@ public class Reasoner {
         this.useLazyUnfolding = true;
     }
 
-    private Pair<List<OWLAxiom>, List<OWLAxiom>> getLazyUnfoldingPartitioning(List<OWLAxiom> tbox) {
+    private Pair<List<OWLAxiom>, List<OWLAxiom>> getLazyUnfoldingPartition(List<OWLAxiom> tbox) {
         /* 
          * Tale metodo partiziona la tbox andando a creare due liste di assiomi:
          *  - Tu contenente solo assiomi unfoldable
