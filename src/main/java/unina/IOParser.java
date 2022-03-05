@@ -31,8 +31,7 @@ public class IOParser {
     private OWLClassExpression concept = null;
     private View view;
 
-    private static String filePath = "ontologies/food.man.owl";
-
+    private String basePath = "ontologies/";
 
     public IOParser() {
         man = OWLManager.createOWLOntologyManager();  
@@ -43,12 +42,13 @@ public class IOParser {
         return axioms;
     }
 
-    public void loadOntology(String filePath) {
+    public void loadOntology(String ontologyFile) {
 
         /*
          * Carica da file l'ontologia specificata tramite path.
          */
 
+        String filePath = basePath + ontologyFile;
         File file = new File(filePath);
         try {
             o = man.loadOntologyFromOntologyDocument(file);
@@ -154,7 +154,6 @@ public class IOParser {
     }
 
     public static void main(String[] args) {    
-
         IOParser io = new IOParser();
         Reasoner reasoner = new Reasoner();
 
@@ -162,7 +161,7 @@ public class IOParser {
         io.setView(view);
 
         // caricamento TBox
-        io.loadOntology(filePath);
+        io.loadOntology("food.man.owl");
         reasoner.setTbox(io.getTbox());
                 
         //lettura e traduzione in concetto
