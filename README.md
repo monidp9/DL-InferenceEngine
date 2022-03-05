@@ -11,4 +11,4 @@ The first one is required for speeding up the computation. The latter is necessa
 | :---: | :---: |
 | C | T |
 
-They are managed with a specific serialization, in particular T loaded from a file, C readed and loaded from a GUI through Manchester syntax. The tableau query result is graphically represented in RDF format (Turtle notation) and visualized with a specific graph visualization program (graphviz). The passed time is returned too.
+They are managed with a specific serialization, in particular T loaded from a file, C readed and loaded from a GUI through Manchester syntax. The tableau resulting fomr the query is graphically represented in RDF format (Turtle notation) and visualized with a specific graph visualization program (graphviz). The passed time is returned too.
