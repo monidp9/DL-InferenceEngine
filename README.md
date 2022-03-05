@@ -5,10 +5,10 @@ For this academic project it has been required to build an inference engine base
 1. Lazy unfolding 
 2. Blocking technique 
 
-The first one is required for speeding up the computation. The latter is necessary to preserve the decidability of the inference engine, otherwise lost because of the non empty TBox T. The input is:
+The first one is required for speeding up the computation. The latter is necessary to preserve the decidability of the reasoning, otherwise lost because of the non empty TBox T. The input is:
 
 | Concept | TBox |
 | :---: | :---: |
 | C | T |
 
-They are loaded with a specific serialization, in particular T loaded from a file, C readed and loaded from prompt (written in Manchester syntax). The tableau query result is graphically represented in RDF format and visualized with a specific graph visualization program. The passed time is returned too.
+They are managed with a specific serialization, in particular T loaded from a file, C readed and loaded from prompt through Manchester syntax. The tableau query result is graphically represented in RDF format (Turtle notation) and visualized with a specific graph visualization program (graphviz). The passed time is returned too.
