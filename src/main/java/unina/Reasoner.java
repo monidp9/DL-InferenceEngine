@@ -6,7 +6,6 @@ import java.util.stream.Stream;
 import javafx.util.Pair;
 import java.util.*;
 
-import org.apache.jena.base.Sys;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 
@@ -67,6 +66,8 @@ public class Reasoner {
 
     private boolean dfs(Node node){ 
         if(node.isBlocked()) {
+            rdfGraphWriter.setNodeLabel(node.getParentOnGraph(), node, false);
+            rdfGraphWriter.setNodeColor(node, "green");
             return true;
         }
 
@@ -103,7 +104,7 @@ public class Reasoner {
         // scrittura label del nodo nel grafo
         rdfGraphWriter.setNodeLabel(node.getParentOnGraph(), node, false);
 
-        // applica OR esaustivamente 
+        // applica OR esaustivamente
         for (OWLAxiom axiom : structure) {
             if (axiom instanceof OWLClassAssertionAxiom){ 
                 classExpression = ((OWLClassAssertionAxiom) axiom).getClassExpression();
@@ -169,30 +170,29 @@ public class Reasoner {
         int oldStrSize = node.getStructure().size();
 
         // applica regole di LAZY UNFOLDING
-        do {
-            isAppliedRule = false;
-            structureTmp = new TreeSet<OWLAxiom>(structure);
+        if(this.useLazyUnfolding) {
+            do {
+                isAppliedRule = false;
+                structureTmp = new TreeSet<OWLAxiom>(structure);
 
-            for(OWLAxiom axiom: structureTmp) {
-                if(axiom instanceof OWLClassAssertionAxiom) {
-                    if(applyLazyUnfoldingRule((OWLClassAssertionAxiom) axiom, node)) {
-                        isAppliedRule = true;
+                for(OWLAxiom axiom: structureTmp) {
+                    if(axiom instanceof OWLClassAssertionAxiom) {
+                        if(applyLazyUnfoldingRule((OWLClassAssertionAxiom) axiom, node)) {
+                            isAppliedRule = true;
+                        }
                     }
                 }
+            } while(isAppliedRule);
+
+            int newStrSize = node.getStructure().size();
+            if(oldStrSize < newStrSize){
+                node.setAppliedLU(true);
+                return dfs(node);
             }
-        } while(isAppliedRule);
 
-
-        int newStrSize = node.getStructure().size();
-
-        if(oldStrSize < newStrSize){
-            node.setAppliedLU(true);
-            return dfs(node);
+            node.setAppliedLU(false);
+            rdfGraphWriter.setNodeLabel(node.getParentOnGraph(), node, true);
         }
-
-        node.setAppliedLU(false);
-        rdfGraphWriter.setNodeLabel(node.getParentOnGraph(), node, true);
-
         
         // applica ESISTENZIALE
         if(isClashFree(structure)) {
@@ -215,6 +215,7 @@ public class Reasoner {
                 }
 
                 if (isAppliedRule) {
+                    node.setSx();
                     rdfGraphWriter.addRDFTriple(node, "exEdge", newNode);
                     rdfGraphWriter.writeOnGraph(node, newNode, "∃");                
 
@@ -229,7 +230,6 @@ public class Reasoner {
                     }
 
                     if (isClashFree(newNode.getStructure())) { 
-                        node.setSx();
                         setIfBlocked(newNode);
                         if(!dfs(newNode)){
                             labels = rdfGraphWriter.getDiffLabels(node);

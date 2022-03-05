@@ -142,7 +142,6 @@ public class ConceptPanel extends JPanel implements ActionListener{
                 ioParser.fromExprToConcept(expr);
             } catch (ParserException ex) {
                 JOptionPane.showMessageDialog(d, "Manchester syntax error.", "ERROR", JOptionPane.ERROR_MESSAGE);
-                t.setText(null);
                 return;
             } 
             JOptionPane.showMessageDialog(d, "Concept traslated.", "SUCCESS", JOptionPane.INFORMATION_MESSAGE);

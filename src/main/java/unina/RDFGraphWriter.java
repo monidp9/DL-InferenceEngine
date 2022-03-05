@@ -243,7 +243,7 @@ public class RDFGraphWriter {
     private String getConceptName(OWLClass C) {
         String concept = C.toStringID();
         int hashMarkIndex = concept.indexOf("#");
-        String conceptName = concept.substring(hashMarkIndex+1); //, hashMarkIndex+4); 
+        String conceptName = concept.substring(hashMarkIndex+1);
 
         if(conceptName.equals("Nothing")){
             conceptName = "⊥";
@@ -256,7 +256,7 @@ public class RDFGraphWriter {
     private String getPropertyName(OWLObjectPropertyExpression R) {
         String property = R.toString();
         int hashMarkIndex = property.indexOf("#");
-        String propertyName = property.substring(hashMarkIndex+1, property.length()-1); //property.length()-1
+        String propertyName = property.substring(hashMarkIndex+1, property.length()-1);
         return propertyName;
     }
 
