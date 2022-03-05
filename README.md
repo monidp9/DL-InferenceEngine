@@ -1,6 +1,6 @@
-# Inference Engine for satisfability in ALC
+# Inference Engine for satisfiability in ALC
 
-For this academic project it has been required to build an inference engine based on the Tableau method in order to implement the satisfability of a concept in ALC. In details, the engine must check the satisfability in respect with a not empty TBox T, using some specific methods:
+For this academic project it has been required to build an inference engine based on the Tableau method in order to implement the satisfiability of a concept in ALC. In details, the engine must check the satisfiability in respect with a not empty TBox T, using some specific methods:
 
 1. Lazy unfolding 
 2. Blocking technique 
