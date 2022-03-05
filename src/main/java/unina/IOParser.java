@@ -175,7 +175,7 @@ public class IOParser {
         reasoner.activeLazyUnfolding();
         
         boolean sat = reasoner.reasoning(concept);
-        System.out.print("Concept satisfability: ");
+        System.out.print("Concept satisfiability: ");
         if(sat) {
             System.out.println("Yes");
         } else {
