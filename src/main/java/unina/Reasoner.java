@@ -532,10 +532,10 @@ public class Reasoner {
          * Il tipo di ritorno pair contiene nell'ordine Tu e Tg.
          * 
          * La tbox presenta solo 4 tipologie di assiomi: OWLEquivalentClassesAxiom,
-         * OWLSubClassOfAxiom, OWLObjectPropertyDomainAxiom, OWLObjectPropertyDomainAxiom.
+         * OWLSubClassOfAxiom, OWLObjectPropertyDomainAxiom, OWLObjectPropertyRangeAxiom.
          * Vengono presi in considerazione soltanto i primi due mentre gli altri saranno esclusi
          * in quanto rispettano sicuramente la precondizione di avere un concetto atomico in LHS 
-         * (dopo avrli trasformati in assiomi di inclusione)
+         * (dopo averli trasformati in assiomi di inclusione)
          */
 
         List<OWLAxiom> Tu = new LinkedList<>();
