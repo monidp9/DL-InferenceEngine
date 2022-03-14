@@ -4,6 +4,8 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import unina.utility.Node;
+import unina.utility.Container;
 
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.*;
@@ -93,6 +95,11 @@ public class RDFGraphWriter {
     }
 
     public String getAllLabels(Set<OWLAxiom> set) {
+        /*
+         * il metodo si preoccupa di restituire le etichette di un nodo in formato stringa
+         */ 
+
+
         OWLClassExpression classExpression;
         String label = null;
 

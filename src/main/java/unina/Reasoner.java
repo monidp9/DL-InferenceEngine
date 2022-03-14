@@ -4,10 +4,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javafx.util.Pair;
-import java.util.*;
+import unina.utility.Node;
+import unina.utility.Container;
 
+import java.util.*;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
+
 
 
 public class Reasoner {
@@ -133,7 +136,7 @@ public class Reasoner {
                 }
 
                 if (!isClashFree(newNode.getStructure()) || !dfs(newNode)) { 
-                    // viene ripresa la struttura priva del primo disgiunto
+                    // viene considerata la struttura priva del primo disgiunto
 
                     newNode = new Node(node.getIndividual()); 
                     newNode.setStructure(new TreeSet<OWLAxiom>(structure));
@@ -557,8 +560,9 @@ public class Reasoner {
                 subClassAx = (OWLSubClassOfAxiom) axiom;
 
                 if(isUnfoldableAddingSubClass(Tu, subClassAx)){
-
-                    if(subClassAx instanceof OWLObjectIntersectionOf){
+                    OWLClassExpression A = subClassAx.getSubClass();
+                    
+                    if(A instanceof OWLObjectIntersectionOf){
                         modifiedSubClassAx = transformSubClassAx(subClassAx);
                         Tu.add(modifiedSubClassAx);
                     } else {
