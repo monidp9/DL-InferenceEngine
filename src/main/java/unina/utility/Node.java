@@ -1,4 +1,4 @@
-package unina;
+package unina.utility;
 
 import java.util.Set;
 import java.util.TreeSet;
