@@ -12,24 +12,20 @@ import java.awt.Desktop;
 
 public class View extends JFrame{
 
-    private ConceptPanel conceptPanel = null; 
-    private LoadingPanel loadingPanel = null; 
+    private LoadingPanel loadingPanel = null;
 
     public View(){
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 
     public void openConceptReadingView(IOParser io) {
-        conceptPanel = new ConceptPanel(io);
-        setContentPane(this.conceptPanel);
-        conceptPanel.createPanel();
+        setContentPane(new ConceptPanel(io));
+        this.loadingPanel = new LoadingPanel();
 
-        loadingPanel = new LoadingPanel();
     }
 
     public void openGraphView() {
         loadingPanel.closePanel();
-
         try {
             Desktop.getDesktop().open(new File("result/tableau_graph.png"));
         } catch(IOException e) {
@@ -38,9 +34,4 @@ public class View extends JFrame{
         }
         System.exit(0);
     }
-
-    public void showError(String msg) {
-        conceptPanel.showMsgError(msg);
-    }
-
 }

@@ -29,10 +29,12 @@ public class ConceptPanel extends JPanel implements ActionListener{
             UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
             MetalLookAndFeel.setCurrentTheme(new OceanTheme());
         } catch (Exception e) { e.printStackTrace(); }
+
+        createPanel();
     }
     
 
-    public void createPanel() {
+    private void createPanel() {
         t = new JTextArea();
         d = new JDialog();
     

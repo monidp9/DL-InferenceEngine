@@ -157,7 +157,7 @@ public class IOParser {
         View view = new View();
 
         // caricamento TBox
-        io.loadOntology("food.man.owl");
+        io.loadOntology("loop.man.owl");
         reasoner.setTbox(io.getTbox());
 
         //lettura e traduzione in concetto
