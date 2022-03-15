@@ -23,7 +23,7 @@ public class View extends JFrame{
         conceptPanel = new ConceptPanel(io);
         setContentPane(this.conceptPanel);
         conceptPanel.createPanel();
-        
+
         loadingPanel = new LoadingPanel();
     }
 

@@ -14,6 +14,7 @@ import org.semanticweb.owlapi.util.BidirectionalShortFormProviderAdapter;
 import org.semanticweb.owlapi.util.ShortFormProvider;
 import org.semanticweb.owlapi.util.mansyntax.ManchesterOWLSyntaxParser;
 
+import unina.utility.BinaryExeption;
 import unina.view.View;
 
 
@@ -29,7 +30,6 @@ public class IOParser {
     private OWLOntologyManager man;
 
     private OWLClassExpression concept = null;
-    private View view;
 
     private String basePath = "ontologies/";
 
@@ -57,7 +57,7 @@ public class IOParser {
         }
     }
 
-    public void fromExprToConcept(String expr) {
+    public void fromExprToConcept(String expr){
 
         /*
          * Converte l'espressione attributo della classe in un concetto
@@ -101,7 +101,7 @@ public class IOParser {
            public void visit(OWLObjectIntersectionOf objIn) {
                List<OWLClassExpression> l = objIn.getOperandsAsList();
                if(l.size() > 2) {
-                view.showError("Logical operators (and, or) are expected to be binary");
+                    throw new BinaryExeption("Logical operators (and, or) are expected to be binary");
                 }
                for(OWLClassExpression ce: l) {
                    if(ce instanceof OWLObjectIntersectionOf || 
@@ -117,7 +117,7 @@ public class IOParser {
            public void visit(OWLObjectUnionOf objUn) {
               List<OWLClassExpression> l = objUn.getOperandsAsList();
                if(l.size() > 2) {
-                view.showError("Logical operators (and, or) are expected to be binary");
+                    throw new BinaryExeption("Logical operators (and, or) are expected to be binary");
                 }
               for(OWLClassExpression ce: l) {
                   if(ce instanceof OWLObjectIntersectionOf || 
@@ -145,9 +145,6 @@ public class IOParser {
         return concept;
     }
 
-    public void setView(View view){
-        this.view = view;
-    }
 
     public OWLClassExpression getConcept() {
         return concept;
@@ -158,7 +155,6 @@ public class IOParser {
         Reasoner reasoner = new Reasoner();
 
         View view = new View();
-        io.setView(view);
 
         // caricamento TBox
         io.loadOntology("food.man.owl");

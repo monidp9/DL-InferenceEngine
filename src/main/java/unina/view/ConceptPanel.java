@@ -14,6 +14,7 @@ import javax.swing.plaf.metal.OceanTheme;
 import org.semanticweb.owlapi.manchestersyntax.renderer.ParserException;
 import javafx.application.Platform;
 import unina.IOParser;
+import unina.utility.BinaryExeption;
 
 
 public class ConceptPanel extends JPanel implements ActionListener{
@@ -98,7 +99,7 @@ public class ConceptPanel extends JPanel implements ActionListener{
 
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(ActionEvent e){
         
         /*
          * Implementa le azioni da fare una volta che l'utente interagisce
@@ -141,7 +142,11 @@ public class ConceptPanel extends JPanel implements ActionListener{
             } catch (ParserException ex) {
                 JOptionPane.showMessageDialog(d, "Manchester syntax error.", "ERROR", JOptionPane.ERROR_MESSAGE);
                 return;
+            } catch (BinaryExeption ex) {
+                JOptionPane.showMessageDialog(d, ex.getMessage(), "ERROR", JOptionPane.ERROR_MESSAGE);
+                return;
             }
+            
             JOptionPane.showMessageDialog(d, "Concept traslated.", "SUCCESS", JOptionPane.INFORMATION_MESSAGE);
             
             d.setModal(false);
