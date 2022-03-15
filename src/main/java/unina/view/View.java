@@ -14,14 +14,18 @@ public class View extends JFrame{
 
     private ConceptPanel conceptPanel = null; 
     private LoadingPanel loadingPanel = null; 
+    private int i = 0;
 
     public View(){
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 
     public void openConceptReadingView(IOParser io) {
-        setContentPane(new ConceptPanel(io));
-        loadingPanel = new LoadingPanel();
+        i = i+1;
+        this.conceptPanel = new ConceptPanel(io);
+        setContentPane(this.conceptPanel);
+        conceptPanel.createPanel();
+        this.loadingPanel = new LoadingPanel();
     }
 
     public void openGraphView() {
@@ -35,10 +39,4 @@ public class View extends JFrame{
         }
         System.exit(0);
     }
-
-    public void showError(String msg) {
-        conceptPanel.showMsgError(msg);
-        System.exit(1);
-    }
-
 }
