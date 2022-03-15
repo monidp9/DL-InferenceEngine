@@ -20,7 +20,10 @@ public class View extends JFrame{
     }
 
     public void openConceptReadingView(IOParser io) {
-        setContentPane(new ConceptPanel(io));
+        conceptPanel = new ConceptPanel(io);
+        setContentPane(this.conceptPanel);
+        conceptPanel.createPanel();
+        
         loadingPanel = new LoadingPanel();
     }
 
@@ -38,7 +41,6 @@ public class View extends JFrame{
 
     public void showError(String msg) {
         conceptPanel.showMsgError(msg);
-        System.exit(1);
     }
 
 }
