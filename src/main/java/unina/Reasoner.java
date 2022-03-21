@@ -136,7 +136,7 @@ public class Reasoner {
                     rdfGraphWriter.setNodeLabel(node, newNode, false);         
                 }
 
-                if (!isClashFree(newNode.getStructure()) || !dfs(newNode)) { 
+                if (!isClashFree(newNode.getStructure()) || !dfs(newNode)) {
                     // viene considerata la struttura priva del primo disgiunto
 
                     newNode = new Node(node.getIndividual()); 
@@ -445,82 +445,6 @@ public class Reasoner {
             }
         }
         return true;
-    }
-
-    private void setIfBlocked2(Node node) {
-
-        /*
-         * Imposta il blocking di un nodo qualora la sua struttura dovesse 
-         * essere contenuta in quella del padre. 
-         */
-
-        if(tboxInConcept != null) {
-            Node parentNode = node.getParent();
-            Set<OWLAxiom> parentStructure = parentNode.getStructure();
-            Set<OWLAxiom> structure = node.getStructure();
-
-            OWLClassAssertionAxiom classAssertion, parentClassAssertion;
-            OWLIndividual individual;
-            OWLClassExpression ce, parentCe;
-
-            Set<OWLClassExpression> ceFlat = null, parentCeFlat = null;
-
-            boolean blocked = true;
-
-            for(OWLAxiom firstAxiom: structure) {
-                if(firstAxiom instanceof OWLClassAssertionAxiom) {
-                    classAssertion = (OWLClassAssertionAxiom) firstAxiom;
-
-                    ce = classAssertion.getClassExpression();
-                    individual = classAssertion.getIndividual();
-
-                    if(individual.equals(node.getIndividual())) {
-                        
-                        if(ce instanceof OWLObjectIntersectionOf) {
-                            ceFlat = ce.asConjunctSet();
-                        } else if(ce instanceof OWLObjectUnionOf) {
-                            ceFlat = ce.asDisjunctSet();
-                        } else {
-                            ceFlat = null;
-                        }
-
-                        if(ceFlat != null) {
-                            blocked = false;
-                            for(OWLAxiom secondAxiom: parentStructure) {
-                                if(secondAxiom instanceof OWLClassAssertionAxiom) {
-                                    parentClassAssertion = (OWLClassAssertionAxiom) secondAxiom;
-                                    parentCe = parentClassAssertion.getClassExpression();
-                                    
-                                    if(parentCe instanceof OWLObjectIntersectionOf) {
-                                        parentCeFlat = parentCe.asConjunctSet();
-                                    } else if(parentCe instanceof OWLObjectUnionOf) {
-                                        parentCeFlat = parentCe.asDisjunctSet();
-                                    } else {
-                                        parentCeFlat = null;
-                                    }
-
-                                    if(parentCeFlat != null && parentCeFlat.equals(ceFlat)) {
-                                        blocked = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            if(!blocked) {
-                                break;
-                            }
-                        } else {
-                            parentClassAssertion = df.getOWLClassAssertionAxiom(ce, parentNode.getIndividual());
-                            if(!parentStructure.contains(parentClassAssertion)) {
-                                blocked = false;
-                                break;
-                            }
-                        }
-
-                    }
-                }
-            }
-            node.setBlocked(blocked);
-        }
     }
 
     private void setIfBlocked(Node node) {
