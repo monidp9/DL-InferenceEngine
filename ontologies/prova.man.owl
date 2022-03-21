@@ -18,22 +18,8 @@ Class: t:Animal
 
 Class: t:Person
 
-    SubClassOf: 
-        t:eats some t:Person
-
-
-Class: t:Person
-
     EquivalentTo: not t:Animal    
        
-
-ObjectProperty: t:eats
-
-    Domain: 
-       t:Person
-    
-    Range: 
-       t:Person
 
 
 ObjectProperty: t:loves
@@ -43,3 +29,12 @@ ObjectProperty: t:loves
     
     Range:
         t:Animal
+
+
+ObjectProperty: t:haPadrone 
+
+    Domain: 
+        t:Animal
+
+    Range:
+        t:Person

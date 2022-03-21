@@ -145,7 +145,6 @@ public class IOParser {
         return concept;
     }
 
-
     public OWLClassExpression getConcept() {
         return concept;
     }

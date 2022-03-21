@@ -63,7 +63,6 @@ public class RDFGraphWriter {
             prop = model.createProperty(namespace, propName);
             x.addProperty(prop, labels);
         }
-
     }
 
     public void renderRDF(String filePath) {
