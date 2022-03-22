@@ -28,7 +28,6 @@ public class IOParser {
 
     private OWLOntology o;
     private OWLOntologyManager man;
-
     private OWLClassExpression concept = null;
 
     private String basePath = "ontologies/";
@@ -156,7 +155,7 @@ public class IOParser {
         View view = new View();
 
         // caricamento TBox
-        io.loadOntology("loop.man.owl");
+        io.loadOntology("food.man.owl");
         reasoner.setTbox(io.getTbox());
 
         //lettura e traduzione in concetto

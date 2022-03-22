@@ -33,21 +33,23 @@ public class Reasoner {
         Set<OWLAxiom> structure = node.getStructure();
         structure.add(df.getOWLClassAssertionAxiom(C, x0));
 
-        if(useLazyUnfolding && tbox != null && !tbox.isEmpty()){
-            Pair<List<OWLAxiom>, List<OWLAxiom>> tboxLazyUnfolding = getLazyUnfoldingPartition(tbox); 
-            List<OWLAxiom> Tu = tboxLazyUnfolding.getKey();
-            List<OWLAxiom> Tg = tboxLazyUnfolding.getValue();
-            this.Tu = Tu;
+        if(tbox != null && !tbox.isEmpty()){
+            if(useLazyUnfolding){
+                Pair<List<OWLAxiom>, List<OWLAxiom>> tboxLazyUnfolding = getLazyUnfoldingPartition(tbox); 
+                List<OWLAxiom> Tu = tboxLazyUnfolding.getKey();
+                List<OWLAxiom> Tg = tboxLazyUnfolding.getValue();
+                this.Tu = Tu;
 
-            if(Tg != null && !Tg.isEmpty()) {
-                OWLClassExpression translatedTg = fromTBoxToConcept(Tg);
-                this.tboxInConcept = translatedTg;
-                structure.add(df.getOWLClassAssertionAxiom(translatedTg, x0));
+                if(Tg != null && !Tg.isEmpty()) {
+                    OWLClassExpression translatedTg = fromTBoxToConcept(Tg);
+                    this.tboxInConcept = translatedTg;
+                    structure.add(df.getOWLClassAssertionAxiom(translatedTg, x0));
+                }
+            } else {
+                translatedTbox = fromTBoxToConcept(tbox);
+                this.tboxInConcept = translatedTbox;
+                structure.add(df.getOWLClassAssertionAxiom(translatedTbox, x0));
             }
-        } else {
-            translatedTbox = fromTBoxToConcept(tbox);
-            this.tboxInConcept = translatedTbox;
-            structure.add(df.getOWLClassAssertionAxiom(translatedTbox, x0));
         }
 
         rdfGraphWriter.initRDF();
@@ -172,9 +174,9 @@ public class Reasoner {
             }
         }
 
-        int oldStrSize = node.getStructure().size();
 
         // applica regole di LAZY UNFOLDING
+        int oldStrSize = node.getStructure().size();
         if(this.useLazyUnfolding) {
             do {
                 isAppliedRule = false;
@@ -240,7 +242,6 @@ public class Reasoner {
                         if(!dfs(newNode)){
                             labels = rdfGraphWriter.getDiffLabels(node);
                             rdfGraphWriter.addRDFTriple(node, "labels", labels);
-
                             return false;
                         }
                         isAppliedRule = false;
@@ -260,7 +261,6 @@ public class Reasoner {
         } else {
             labels = rdfGraphWriter.getDiffLabels(node);
             rdfGraphWriter.addRDFTriple(node, "labels", labels);
-
             rdfGraphWriter.setNodeColor(node, "red");
 
             return false;        
@@ -346,7 +346,7 @@ public class Reasoner {
             classExpression.accept(new OWLClassExpressionVisitor() {
                 @Override
                 public void visit(OWLObjectIntersectionOf oi) {
-                    for (OWLClassExpression ce : oi.getOperandsAsList()) {
+                    for (OWLClassExpression ce : oi.asConjunctSet()) {
                         OWLClassAssertionAxiom classAssertion = df.getOWLClassAssertionAxiom(ce, currIndividual);
 
                         if (!structure.contains(classAssertion)) {  
@@ -447,86 +447,9 @@ public class Reasoner {
         return true;
     }
 
-    private void setIfBlocked2(Node node) {
-
-        /*
-         * Imposta il blocking di un nodo qualora la sua struttura dovesse 
-         * essere contenuta in quella del padre. 
-         */
-
-        if(tboxInConcept != null) {
-            Node parentNode = node.getParent();
-            Set<OWLAxiom> parentStructure = parentNode.getStructure();
-            Set<OWLAxiom> structure = node.getStructure();
-
-            OWLClassAssertionAxiom classAssertion, parentClassAssertion;
-            OWLIndividual individual;
-            OWLClassExpression ce, parentCe;
-
-            Set<OWLClassExpression> ceFlat = null, parentCeFlat = null;
-
-            boolean blocked = true;
-
-            for(OWLAxiom firstAxiom: structure) {
-                if(firstAxiom instanceof OWLClassAssertionAxiom) {
-                    classAssertion = (OWLClassAssertionAxiom) firstAxiom;
-
-                    ce = classAssertion.getClassExpression();
-                    individual = classAssertion.getIndividual();
-
-                    if(individual.equals(node.getIndividual())) {
-                        
-                        if(ce instanceof OWLObjectIntersectionOf) {
-                            ceFlat = ce.asConjunctSet();
-                        } else if(ce instanceof OWLObjectUnionOf) {
-                            ceFlat = ce.asDisjunctSet();
-                        } else {
-                            ceFlat = null;
-                        }
-
-                        if(ceFlat != null) {
-                            blocked = false;
-                            for(OWLAxiom secondAxiom: parentStructure) {
-                                if(secondAxiom instanceof OWLClassAssertionAxiom) {
-                                    parentClassAssertion = (OWLClassAssertionAxiom) secondAxiom;
-                                    parentCe = parentClassAssertion.getClassExpression();
-                                    
-                                    if(parentCe instanceof OWLObjectIntersectionOf) {
-                                        parentCeFlat = parentCe.asConjunctSet();
-                                    } else if(parentCe instanceof OWLObjectUnionOf) {
-                                        parentCeFlat = parentCe.asDisjunctSet();
-                                    } else {
-                                        parentCeFlat = null;
-                                    }
-
-                                    if(parentCeFlat != null && parentCeFlat.equals(ceFlat)) {
-                                        blocked = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            if(!blocked) {
-                                break;
-                            }
-                        } else {
-                            parentClassAssertion = df.getOWLClassAssertionAxiom(ce, parentNode.getIndividual());
-                            if(!parentStructure.contains(parentClassAssertion)) {
-                                blocked = false;
-                                break;
-                            }
-                        }
-
-                    }
-                }
-            }
-            node.setBlocked(blocked);
-        }
-    }
-
     private void setIfBlocked(Node node) {
         if(tboxInConcept != null) {
             Node parentNode = node.getParent();
-
             Set<OWLAxiom> parentStructure; 
             Set<OWLAxiom> structure;
 
@@ -696,7 +619,6 @@ public class Reasoner {
                     operand = operand.getComplementNNF();
                     superClass = df.getOWLObjectUnionOf(Stream.of(operand, C));
                     newSubClassAx = df.getOWLSubClassOfAxiom(newA, superClass);
-
                     ret.setValue(newSubClassAx);
                 }
             }
