@@ -138,7 +138,7 @@ public class Reasoner {
                     rdfGraphWriter.setNodeLabel(node, newNode, false);         
                 }
 
-                if (!isClashFree(newNode.getStructure()) || !dfs(newNode)) { 
+                if (!isClashFree(newNode.getStructure()) || !dfs(newNode)) {
                     // viene considerata la struttura priva del primo disgiunto
 
                     newNode = new Node(node.getIndividual()); 
