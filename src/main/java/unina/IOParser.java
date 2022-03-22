@@ -103,7 +103,7 @@ public class IOParser {
                if(l.size() > 2) {
                     throw new BinaryExeption("Logical operators (and, or) are expected to be binary");
                 }
-               for(OWLClassExpression ce: l) {
+                for(OWLClassExpression ce: l) {
                    if(ce instanceof OWLObjectIntersectionOf || 
                       ce instanceof OWLObjectUnionOf ||
                       ce instanceof OWLObjectSomeValuesFrom ||
@@ -119,7 +119,7 @@ public class IOParser {
                if(l.size() > 2) {
                     throw new BinaryExeption("Logical operators (and, or) are expected to be binary");
                 }
-              for(OWLClassExpression ce: l) {
+                for(OWLClassExpression ce: l) {
                   if(ce instanceof OWLObjectIntersectionOf || 
                      ce instanceof OWLObjectUnionOf || 
                      ce instanceof OWLObjectSomeValuesFrom ||
@@ -156,7 +156,7 @@ public class IOParser {
         View view = new View();
 
         // caricamento TBox
-        io.loadOntology("loop.man.owl");
+        io.loadOntology("food.man.owl");
         reasoner.setTbox(io.getTbox());
 
         //lettura e traduzione in concetto

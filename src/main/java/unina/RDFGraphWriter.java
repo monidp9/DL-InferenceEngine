@@ -98,7 +98,6 @@ public class RDFGraphWriter {
          * il metodo si preoccupa di restituire le etichette di un nodo in formato stringa
          */ 
 
-
         OWLClassExpression classExpression;
         String label = null;
 
@@ -150,10 +149,6 @@ public class RDFGraphWriter {
     }
 
     private void createLabel(OWLClassExpression C, Container<String> labelContainer) {
-        /* 
-         *
-         */
-
         String label = null, conceptName = null; 
 
         if(C instanceof OWLClass){

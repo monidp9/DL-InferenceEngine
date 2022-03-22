@@ -606,11 +606,15 @@ public class Reasoner {
                 Set<OWLClassExpression> conjunctSet =  oi.asConjunctSet();
                 OWLClassExpression superClass, operand = null, newA = null;;
                 OWLSubClassOfAxiom newSubClassAx = null;
+                Container<Boolean> isAcyclic = new Container<>(false);
 
                 for (OWLClassExpression ce : conjunctSet){
                     if (ce instanceof OWLClass){
-                        newA = ce; 
-                        break;
+                        isAcyclicalConcept(Tu, (OWLClass) ce, C, isAcyclic);
+                        if(checkCompatibilityWithGCI(Tu, (OWLClass) ce) && isAcyclic.getValue()) {
+                            newA = ce; 
+                            break;
+                        }
                     }
                 }
                 //lo sarà sempre perché il controllo viene fatto in 'isUnfoldableAddingSubClass'
@@ -633,13 +637,20 @@ public class Reasoner {
         OWLClassExpression A = null;
         Container<Boolean> ret = new Container<>(false);
         A = subClassAx.getSubClass();
+        OWLClassExpression C = subClassAx.getSuperClass();
 
         /* 
          * Verifica che A o sia un concetto atomico oppure del tipo A ∩ C (con C che può essere 
          * un concetto complesso) trasformando l'inclusione in modo da avere il LHS formato da un 
          * solo concetto atomico A e spostando a destra i restanti congiunti C
         */
+
         if(A instanceof OWLClass){
+            isAcyclicalConcept(Tu, (OWLClass) A, C, ret);
+
+            if(!ret.getValue()) {
+                return false;
+            }
             return checkCompatibilityWithGCI(Tu, (OWLClass) A);    
 
         } else if(A instanceof OWLObjectIntersectionOf){
@@ -647,9 +658,11 @@ public class Reasoner {
                 @Override
                 public void visit(OWLObjectIntersectionOf oi) {
                     Set<OWLClassExpression> conjunctSet =  oi.asConjunctSet(); 
+                    Container<Boolean> isAcyclic = new Container<>(false);
                     for (OWLClassExpression ce : conjunctSet){
                         if (ce instanceof OWLClass){
-                            if(checkCompatibilityWithGCI(Tu, (OWLClass) ce)){
+                            isAcyclicalConcept(Tu, (OWLClass) ce, C, isAcyclic);
+                            if(checkCompatibilityWithGCI(Tu, (OWLClass) ce) && ret.getValue()){
                                 ret.setValue(true);
                             }
                         }
