@@ -141,7 +141,6 @@ public class RDFGraphWriter {
                     labels = labelContainer.getValue();
                 } else {
                     labels = labels + ", " + labelContainer.getValue();
-
                 }
             }
         }
@@ -261,7 +260,7 @@ public class RDFGraphWriter {
         return propertyName;
     }
 
-    public void setNodeLabel(Node parent, Node node, boolean color) {
+    public void setNodeLabel(Node parent, Node node, boolean lazyUnfoldingColor) {
 
         if(!node.isAppliedLU()){
             MutableNode n = graphNodes.get(node);
@@ -276,7 +275,7 @@ public class RDFGraphWriter {
 
             String nodeLabel = getAllLabels(axiomDifference);
 
-            if(color){
+            if(lazyUnfoldingColor){
                 labelNode = mutNode(nodeLabel + "\n(LU "+node.getId()+")").add(Shape.RECTANGLE, Color.BLUE); 
             } else {
                 labelNode = mutNode(nodeLabel + "\n("+ node.getId()+")").add(Shape.RECTANGLE); 

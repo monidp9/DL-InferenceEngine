@@ -28,7 +28,6 @@ public class IOParser {
 
     private OWLOntology o;
     private OWLOntologyManager man;
-
     private OWLClassExpression concept = null;
 
     private String basePath = "ontologies/";
