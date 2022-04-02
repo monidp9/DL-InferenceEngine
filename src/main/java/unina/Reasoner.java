@@ -135,7 +135,10 @@ public class Reasoner {
 
                 if(!isClashFree(newNode.getStructure())){
                     rdfGraphWriter.setNodeColor(newNode, "red");
-                    rdfGraphWriter.setNodeLabel(node, newNode, false);         
+                    rdfGraphWriter.setNodeLabel(node, newNode, false);
+
+                    labels = rdfGraphWriter.getDiffLabels(newNode);
+                    rdfGraphWriter.addRDFTriple(newNode, "labels", labels);     
                 }
 
                 if (!isClashFree(newNode.getStructure()) || !dfs(newNode)) {
